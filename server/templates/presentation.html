@@ -1,0 +1,3184 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>FloraOrders — Полный контроль вашего цветочного бизнеса</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Презентация мобильного приложения FloraOrders для управления цветочным бизнесом."
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #05040a;
+        --bg-alt: #0c0b13;
+        --card: #141321;
+        --accent: #4caf7a;
+        --accent-soft: rgba(76, 175, 122, 0.2);
+        --accent-2: #6ae6c8;
+        --accent-pink: #ff5e9f;
+        --text: #f7f7fb;
+        --muted: #b2b2c4;
+        --border: #26253a;
+        --danger: #ff5e5e;
+        --warning: #ffb74d;
+        --success: #4caf7a;
+        --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.45);
+        --radius-xl: 26px;
+        --radius-lg: 20px;
+        --radius-pill: 999px;
+        --transition-fast: 0.18s ease-out;
+        --transition-med: 0.26s ease-out;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        background: radial-gradient(circle at top, #17162a 0, #05040a 55%);
+        color: var(--text);
+        font-family:
+          "Manrope",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        scroll-behavior: smooth;
+        height: 100%;
+      }
+      body {
+        line-height: 1.6;
+        overflow: hidden;
+      }
+      @media (max-width: 768px) {
+        body {
+          overflow: hidden;
+        }
+      }
+      .page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px 16px 32px;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      @media (max-width: 768px) {
+        .page {
+          height: 100vh;
+          padding: 12px 10px 20px;
+        }
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 10;
+      }
+      @media (max-width: 700px) {
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+      }
+      .logo-pill {
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(12, 11, 19, 0.9);
+        border-radius: var(--radius-pill);
+        padding: 8px 16px 8px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(16px);
+      }
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 30% 20%,
+          #b8f5d0 0,
+          #4caf7a 40%,
+          #1a6b3a 100%
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 800;
+        font-size: 15px;
+        box-shadow: 0 0 22px rgba(76, 175, 122, 0.9);
+      }
+      .logo-text-main {
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .logo-text-sub {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .header-pill {
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(12, 11, 20, 0.96);
+        white-space: nowrap;
+      }
+      .header-hint {
+        display: none;
+      }
+      @media (min-width: 701px) {
+        .header-hint {
+          display: inline-block;
+        }
+      }
+      @media (max-width: 700px) {
+        .header-controls {
+          width: 100%;
+          justify-content: space-between;
+        }
+        .header-pill {
+          font-size: 10px;
+        }
+      }
+
+      .slider {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(7, 7, 16, 0.92);
+        box-shadow: var(--shadow-soft);
+        backdrop-filter: blur(12px);
+      }
+      @media (max-width: 768px) {
+        .slider {
+          border-radius: 20px;
+        }
+      }
+      .slides-wrapper {
+        flex: 1;
+        display: flex;
+        height: 100%;
+        transition: transform var(--transition-med);
+        will-change: transform;
+      }
+      .slide {
+        min-width: 100%;
+        padding: 22px 22px 50px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      @media (max-width: 600px) {
+        .slide {
+          padding: 16px 14px 50px;
+        }
+      }
+
+      .slide-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+      .section-kicker {
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .section-tag {
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: var(--muted);
+        background: rgba(10, 10, 22, 0.96);
+        white-space: nowrap;
+      }
+      @media (max-width: 700px) {
+        .slide-header-row {
+          flex-direction: column;
+        }
+        .section-tag {
+          align-self: flex-start;
+        }
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2.5fr);
+        gap: 24px;
+        align-items: center;
+      }
+      @media (max-width: 900px) {
+        .hero-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 10px;
+        border-radius: var(--radius-pill);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(12, 11, 19, 0.9);
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .hero-badge-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #7ae693 0, #1c7a42 100%);
+        box-shadow: 0 0 12px rgba(122, 230, 147, 0.9);
+      }
+      .hero-title {
+        font-size: clamp(26px, 4vw, 38px);
+        font-weight: 700;
+        line-height: 1.15;
+        margin-bottom: 10px;
+      }
+      .hero-title .highlight {
+        background: linear-gradient(120deg, #4caf7a, #6ae6c8, #ffe27a);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero-subtitle {
+        font-size: 14px;
+        color: var(--muted);
+        max-width: 520px;
+        margin-bottom: 16px;
+      }
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hero-note {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .hero-note strong {
+        color: var(--accent-2);
+      }
+
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: var(--radius-pill);
+        border: none;
+        background: linear-gradient(130deg, #4caf7a, #2e8b57);
+        color: #fff;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        box-shadow: 0 14px 32px rgba(76, 175, 122, 0.5);
+        text-decoration: none;
+        transition:
+          transform var(--transition-fast),
+          box-shadow var(--transition-fast);
+      }
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 40px rgba(76, 175, 122, 0.65);
+      }
+      .btn-outline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 9px 16px;
+        border-radius: var(--radius-pill);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: transparent;
+        color: var(--text);
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        transition:
+          background var(--transition-fast),
+          border-color var(--transition-fast);
+      }
+      .btn-outline:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+
+      .hero-visual {
+        position: relative;
+        padding: 14px;
+        border-radius: var(--radius-xl);
+        background: radial-gradient(
+          circle at top left,
+          rgba(76, 175, 122, 0.2),
+          rgba(6, 6, 15, 0.96)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
+      }
+
+      .hero-card-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.95fr;
+        gap: 10px;
+      }
+      @media (max-width: 600px) {
+        .hero-card-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .hero-card {
+        background: rgba(10, 9, 18, 0.95);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 12px;
+      }
+      .hero-card-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .text-muted {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .chip {
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--muted);
+        background: rgba(15, 14, 24, 0.9);
+      }
+      .chip-danger {
+        border-color: rgba(255, 94, 94, 0.55);
+        color: #ffb3a1;
+        background: rgba(255, 94, 94, 0.14);
+      }
+      .chip-success {
+        border-color: rgba(76, 175, 122, 0.55);
+        color: #bdf5c9;
+        background: rgba(76, 175, 122, 0.12);
+      }
+      .chip-warning {
+        border-color: rgba(255, 183, 77, 0.55);
+        color: #ffe0b2;
+        background: rgba(255, 183, 77, 0.14);
+      }
+      .hero-chip-row,
+      .hero-tag-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+      }
+
+      .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-top: 10px;
+        font-size: 12px;
+      }
+      .metric-row strong {
+        font-size: 17px;
+      }
+
+      .two-cols {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+        gap: 20px;
+        align-items: flex-start;
+      }
+      @media (max-width: 900px) {
+        .two-cols {
+          grid-template-columns: 1fr;
+        }
+      }
+      .three-cols {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      @media (max-width: 900px) {
+        .three-cols {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 14px;
+      }
+      .list li {
+        display: flex;
+        gap: 8px;
+      }
+      .list-bullet {
+        margin-top: 6px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: linear-gradient(130deg, #4caf7a, #6ae6c8);
+        flex-shrink: 0;
+      }
+      .list-cross {
+        margin-top: 6px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: linear-gradient(130deg, #ff5e5e, #ff8e5e);
+        flex-shrink: 0;
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 8px;
+      }
+      @media (max-width: 700px) {
+        .stat-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 480px) {
+        .stat-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .stat-card {
+        background: rgba(12, 12, 24, 0.98);
+        border-radius: 16px;
+        padding: 10px 10px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .stat-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .stat-value {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .stat-note {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .stat-value.accent {
+        background: linear-gradient(120deg, #4caf7a, #6ae6c8);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .stat-value.danger {
+        color: #ff5e5e;
+      }
+
+      .role-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 8px;
+      }
+      @media (max-width: 900px) {
+        .role-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 640px) {
+        .role-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .role-card {
+        background: rgba(12, 12, 24, 0.98);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 10px 10px 12px;
+        font-size: 13px;
+      }
+      .role-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .role-tag {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .role-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .role-list li::before {
+        content: "●";
+        font-size: 7px;
+        margin-right: 6px;
+        color: var(--accent);
+      }
+      .role-icon {
+        font-size: 22px;
+        margin-bottom: 6px;
+      }
+
+      .phone-mockup {
+        width: 100%;
+        max-width: 280px;
+        margin: 0 auto;
+        aspect-ratio: 9/17;
+        border-radius: 28px;
+        border: 2px solid rgba(255, 255, 255, 0.12);
+        padding: 10px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        background: radial-gradient(
+          circle at top,
+          rgba(76, 175, 122, 0.14),
+          rgba(13, 31, 13, 0.98)
+        );
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+        position: relative;
+      }
+      .phone-notch {
+        height: 4px;
+        width: 35%;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.15);
+        align-self: center;
+        margin-bottom: 6px;
+      }
+      .phone-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 6px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .phone-header-icons {
+        display: flex;
+        gap: 4px;
+      }
+      .phone-header-icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: rgba(76, 175, 122, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+      }
+      .phone-status-tabs {
+        display: flex;
+        gap: 3px;
+        padding: 0 4px;
+        overflow-x: auto;
+        margin-bottom: 4px;
+      }
+      .phone-tab {
+        font-size: 8px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .phone-tab.active {
+        background: rgba(76, 175, 122, 0.2);
+        border-color: rgba(76, 175, 122, 0.4);
+        color: #bdf5c9;
+      }
+      .phone-order-card {
+        background: rgba(26, 46, 26, 0.6);
+        border-radius: 10px;
+        padding: 6px 8px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        margin-bottom: 4px;
+      }
+      .phone-order-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10px;
+        margin-bottom: 2px;
+      }
+      .phone-order-name {
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .phone-order-meta {
+        font-size: 9px;
+        color: var(--muted);
+      }
+      .phone-order-badge {
+        font-size: 7px;
+        padding: 1px 5px;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+      .badge-new {
+        background: rgba(59, 130, 246, 0.2);
+        color: #93c5fd;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+      .badge-work {
+        background: rgba(255, 183, 77, 0.2);
+        color: #ffe0b2;
+        border: 1px solid rgba(255, 183, 77, 0.3);
+      }
+      .badge-assembled {
+        background: rgba(139, 92, 246, 0.2);
+        color: #c4b5fd;
+        border: 1px solid rgba(139, 92, 246, 0.3);
+      }
+      .badge-delivery {
+        background: rgba(56, 189, 248, 0.2);
+        color: #bae6fd;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+      }
+      .badge-done {
+        background: rgba(76, 175, 122, 0.2);
+        color: #bdf5c9;
+        border: 1px solid rgba(76, 175, 122, 0.3);
+      }
+      .phone-order-amount {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--accent);
+      }
+      .phone-payment-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .dot-paid {
+        background: #4caf7a;
+      }
+      .dot-advance {
+        background: #ffb74d;
+      }
+      .dot-notpaid {
+        background: #ff5e5e;
+      }
+      .phone-source-icon {
+        font-size: 9px;
+        margin-left: 4px;
+      }
+      .phone-fab {
+        position: absolute;
+        bottom: 14px;
+        right: 14px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(130deg, #4caf7a, #2e8b57);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #fff;
+        box-shadow: 0 6px 20px rgba(76, 175, 122, 0.6);
+      }
+      .phone-search {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 4px 8px;
+        font-size: 9px;
+        color: var(--muted);
+        margin: 0 4px 4px;
+      }
+
+      .comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 10px;
+      }
+      @media (max-width: 700px) {
+        .comparison-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .comparison-card {
+        border-radius: 18px;
+        padding: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .comparison-bad {
+        background: radial-gradient(
+          circle at top left,
+          rgba(255, 94, 94, 0.12),
+          rgba(12, 12, 24, 0.98)
+        );
+      }
+      .comparison-good {
+        background: radial-gradient(
+          circle at top left,
+          rgba(76, 175, 122, 0.12),
+          rgba(12, 12, 24, 0.98)
+        );
+      }
+      .comparison-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .pain-number {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(130deg, #ff5e5e, #ff8e5e);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(255, 94, 94, 0.4);
+      }
+      .solution-number {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(130deg, #4caf7a, #2e8b57);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(76, 175, 122, 0.4);
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 8px;
+      }
+      @media (max-width: 900px) {
+        .feature-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 480px) {
+        .feature-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .feature-card {
+        background: rgba(12, 12, 24, 0.98);
+        border-radius: 16px;
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .feature-card-icon {
+        font-size: 22px;
+        margin-bottom: 6px;
+      }
+      .feature-card-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .feature-card-desc {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .report-mockup {
+        background: rgba(12, 12, 24, 0.98);
+        border-radius: 16px;
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .report-title {
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .report-period {
+        font-size: 10px;
+        color: var(--muted);
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .report-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 11px;
+      }
+      .report-row:last-child {
+        border: none;
+      }
+      .report-row-label {
+        color: var(--muted);
+      }
+      .report-row-value {
+        font-weight: 600;
+      }
+      .report-summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .report-summary-card {
+        background: rgba(76, 175, 122, 0.08);
+        border: 1px solid rgba(76, 175, 122, 0.2);
+        border-radius: 10px;
+        padding: 8px;
+        text-align: center;
+      }
+      .report-summary-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .report-summary-label {
+        font-size: 9px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .timeline {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        margin-top: 10px;
+      }
+      @media (max-width: 900px) {
+        .timeline {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 600px) {
+        .timeline {
+          grid-template-columns: 1fr;
+        }
+      }
+      .timeline-step {
+        background: rgba(12, 12, 24, 0.98);
+        border-radius: 14px;
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: center;
+        position: relative;
+      }
+      .timeline-step::after {
+        content: "";
+        position: absolute;
+        right: -8px;
+        top: 50%;
+        width: 8px;
+        height: 2px;
+        background: rgba(76, 175, 122, 0.4);
+      }
+      .timeline-step:last-child::after {
+        display: none;
+      }
+      @media (max-width: 600px) {
+        .timeline-step::after {
+          display: none;
+        }
+      }
+      .timeline-step-icon {
+        font-size: 20px;
+        margin-bottom: 4px;
+      }
+      .timeline-step-label {
+        font-size: 10px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .timeline-step-desc {
+        font-size: 9px;
+        color: var(--muted);
+      }
+
+      .cta-center {
+        text-align: center;
+        margin-top: 10px;
+      }
+      .cta-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .cta-subtitle {
+        font-size: 14px;
+        color: var(--muted);
+        max-width: 560px;
+        margin: 0 auto 12px;
+      }
+      .price-highlight {
+        margin-top: 12px;
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(76, 175, 122, 0.6);
+        background: radial-gradient(
+          circle at top left,
+          rgba(76, 175, 122, 0.22),
+          rgba(10, 10, 20, 0.98)
+        );
+        box-shadow: 0 14px 40px rgba(76, 175, 122, 0.25);
+      }
+      .price-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: #bdf5c9;
+        margin-bottom: 3px;
+      }
+      .price-value {
+        font-size: 28px;
+        font-weight: 700;
+        background: linear-gradient(120deg, #4caf7a, #6ae6c8, #ffe27a);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-bottom: 4px;
+      }
+      .price-note {
+        font-size: 12px;
+        color: #bdf5c9;
+      }
+      .price-note strong {
+        color: #fff;
+      }
+      .price-old {
+        text-decoration: line-through;
+        color: #ff8e8e;
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .price-discount {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: rgba(255, 94, 94, 0.15);
+        border: 1px solid rgba(255, 94, 94, 0.3);
+        color: #ff8e8e;
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      .guarantee-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 10px;
+      }
+      @media (max-width: 700px) {
+        .guarantee-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .guarantee-card {
+        background: rgba(12, 12, 24, 0.98);
+        border-radius: 16px;
+        padding: 12px;
+        border: 1px solid rgba(76, 175, 122, 0.15);
+        text-align: center;
+      }
+      .guarantee-icon {
+        font-size: 24px;
+        margin-bottom: 6px;
+      }
+      .guarantee-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .guarantee-desc {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .slider-controls {
+        position: absolute;
+        inset: auto 0 8px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 16px;
+        pointer-events: none;
+      }
+      @media (max-width: 768px) {
+        .slider-controls {
+          padding: 0 10px;
+        }
+      }
+      .nav-btn {
+        pointer-events: auto;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.26);
+        background: radial-gradient(
+          circle at top,
+          rgba(255, 255, 255, 0.1),
+          rgba(5, 5, 14, 0.96)
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text);
+        cursor: pointer;
+        font-size: 16px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+        transition:
+          background var(--transition-fast),
+          transform var(--transition-fast);
+      }
+      .nav-btn:hover {
+        background: rgba(255, 255, 255, 0.16);
+        transform: translateY(-1px);
+      }
+      .nav-btn:disabled {
+        opacity: 0.3;
+        cursor: default;
+        transform: none;
+        box-shadow: none;
+      }
+      .slider-dots {
+        pointer-events: auto;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(7, 7, 16, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(12px);
+        margin: 0 auto;
+      }
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        cursor: pointer;
+        transition:
+          width var(--transition-fast),
+          background var(--transition-fast);
+      }
+      .dot.active {
+        width: 22px;
+        background: linear-gradient(120deg, #4caf7a, #6ae6c8);
+      }
+      .dot-label {
+        font-size: 9px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding-left: 6px;
+      }
+
+      footer {
+        margin-top: 8px;
+        font-size: 10px;
+        color: var(--muted);
+        text-align: center;
+      }
+      @media (max-width: 600px) {
+        footer {
+          display: none;
+        }
+      }
+
+      .loss-calculator {
+        background: radial-gradient(
+          circle at top left,
+          rgba(255, 94, 94, 0.1),
+          rgba(12, 12, 24, 0.98)
+        );
+        border: 1px solid rgba(255, 94, 94, 0.2);
+        border-radius: 18px;
+        padding: 14px;
+        margin-top: 10px;
+      }
+      .loss-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 12px;
+      }
+      .loss-row:last-child {
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 94, 94, 0.2);
+      }
+      .loss-label {
+        color: var(--muted);
+      }
+      .loss-value {
+        color: #ff8e8e;
+        font-weight: 600;
+      }
+      .loss-total {
+        color: #ff5e5e !important;
+        font-size: 16px !important;
+      }
+
+      .emoji-icon {
+        font-style: normal;
+        display: inline;
+      }
+
+      .workflow-visual {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .workflow-step {
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .workflow-arrow {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .wf-new {
+        background: rgba(59, 130, 246, 0.15);
+        color: #93c5fd;
+        border-color: rgba(59, 130, 246, 0.3);
+      }
+      .wf-work {
+        background: rgba(255, 183, 77, 0.15);
+        color: #ffe0b2;
+        border-color: rgba(255, 183, 77, 0.3);
+      }
+      .wf-assembled {
+        background: rgba(139, 92, 246, 0.15);
+        color: #c4b5fd;
+        border-color: rgba(139, 92, 246, 0.3);
+      }
+      .wf-delivery {
+        background: rgba(56, 189, 248, 0.15);
+        color: #bae6fd;
+        border-color: rgba(56, 189, 248, 0.3);
+      }
+      .wf-done {
+        background: rgba(76, 175, 122, 0.15);
+        color: #bdf5c9;
+        border-color: rgba(76, 175, 122, 0.3);
+      }
+
+      .cost-comparison {
+        background: rgba(12, 12, 24, 0.98);
+        border-radius: 16px;
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        margin-top: 10px;
+      }
+      .cost-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 12px;
+      }
+      .cost-row:last-child {
+        border: none;
+      }
+      .cost-label {
+        color: var(--muted);
+      }
+      .cost-value {
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <div class="logo-pill">
+          <div class="logo-icon">FO</div>
+          <div>
+            <div class="logo-text-main">FloraOrders</div>
+            <div class="logo-text-sub">Полный контроль цветочного бизнеса</div>
+          </div>
+        </div>
+        <div class="header-controls">
+          <div class="header-pill header-hint">
+            Листайте ← → или нажимайте точки внизу
+          </div>
+          <div class="header-pill">Индивидуальное предложение</div>
+        </div>
+      </header>
+
+      <div class="slider" id="slider">
+        <div class="slides-wrapper" id="slidesWrapper">
+          <!-- SLIDE 0: Hero — акцент на контроль для владельца -->
+          <section class="slide" data-index="0">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">Слайд 1 &middot; Введение</div>
+                <div class="section-title">
+                  Ваш бизнес — под вашим контролем. Всегда.
+                </div>
+              </div>
+              <div class="section-tag">Мобильное приложение для владельца</div>
+            </div>
+            <div class="hero-grid">
+              <div>
+                <div class="hero-badge">
+                  <span class="hero-badge-dot"></span>
+                  Инструмент контроля для владельца бизнеса
+                </div>
+                <h1 class="hero-title">
+                  <span class="highlight">FloraOrders</span> — приложение,
+                  которое даёт вам полный контроль над цветочным бизнесом
+                </h1>
+                <p class="hero-subtitle">
+                  Доходы, расходы, сотрудники, заказы — всё в одном месте на
+                  вашем телефоне. Вы видите реальные цифры бизнеса в любой
+                  момент, а не гадаете по памяти. Каждый сотрудник работает по
+                  чёткой системе, а не как привык.
+                </p>
+                <div class="hero-actions">
+                  <button class="btn-primary" data-goto="1">
+                    Узнать, что я теряю сейчас
+                  </button>
+                  <button class="btn-outline" data-goto="3">
+                    Сразу к возможностям
+                  </button>
+                </div>
+                <div class="hero-note">
+                  <strong>Зачем это владельцу?</strong> Вы перестаёте зависеть
+                  от памяти сотрудников и их честности. Система фиксирует всё:
+                  кто что сделал, когда и сколько заработали.
+                </div>
+              </div>
+              <div class="hero-visual">
+                <div
+                  class="phone-mockup"
+                  style="max-width: 220px; margin: 0 auto"
+                >
+                  <div class="phone-notch"></div>
+                  <div class="phone-header">
+                    <div>
+                      <div style="font-size: 10px; color: var(--muted)">
+                        Florica
+                      </div>
+                      <div style="font-size: 9px; color: var(--muted)">
+                        Владелец
+                      </div>
+                    </div>
+                    <div class="phone-header-icons">
+                      <div class="phone-header-icon">$</div>
+                      <div class="phone-header-icon">+</div>
+                    </div>
+                  </div>
+                  <div class="phone-status-tabs">
+                    <span class="phone-tab active">Все 24</span>
+                    <span class="phone-tab">Новый 5</span>
+                    <span class="phone-tab">В работе 8</span>
+                    <span class="phone-tab">Собран 4</span>
+                  </div>
+                  <div class="phone-search">Поиск заказов...</div>
+                  <div class="phone-order-card">
+                    <div class="phone-order-top">
+                      <span>#1042</span>
+                      <span class="phone-order-badge badge-new">НОВЫЙ</span>
+                    </div>
+                    <div class="phone-order-name">
+                      Анна Петрова
+                      <span class="phone-payment-dot dot-paid"></span>
+                    </div>
+                    <div class="phone-order-meta">
+                      ул. Тверская 15 &middot; сегодня 14:00
+                    </div>
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-top: 2px;
+                      "
+                    >
+                      <span class="phone-order-meta">Букет из 25 роз</span>
+                      <span class="phone-order-amount">8 500 &#8381;</span>
+                    </div>
+                  </div>
+                  <div class="phone-order-card">
+                    <div class="phone-order-top">
+                      <span>#1041</span>
+                      <span class="phone-order-badge badge-work">В РАБОТЕ</span>
+                    </div>
+                    <div class="phone-order-name">
+                      Дмитрий Новиков
+                      <span class="phone-payment-dot dot-advance"></span>
+                    </div>
+                    <div class="phone-order-meta">
+                      Ленинградский пр. 42 &middot; сегодня 16:00
+                    </div>
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-top: 2px;
+                      "
+                    >
+                      <span class="phone-order-meta">Композиция из пионов</span>
+                      <span class="phone-order-amount">12 000 &#8381;</span>
+                    </div>
+                  </div>
+                  <div class="phone-order-card">
+                    <div class="phone-order-top">
+                      <span>#1040</span>
+                      <span class="phone-order-badge badge-delivery"
+                        >ДОСТАВКА</span
+                      >
+                    </div>
+                    <div class="phone-order-name">
+                      Елена Волкова
+                      <span class="phone-payment-dot dot-notpaid"></span>
+                    </div>
+                    <div class="phone-order-meta">
+                      Кутузовский пр. 8 &middot; сегодня 12:00
+                    </div>
+                  </div>
+                  <div class="phone-fab">+</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SLIDE 1: Проблема — оффлайн/чаты/звонки, человеческий фактор -->
+          <section class="slide" data-index="1">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">Слайд 2 &middot; Проблема</div>
+                <div class="section-title">
+                  Как вы теряете деньги каждый день, даже не замечая
+                </div>
+              </div>
+              <div class="section-tag">Знакомо каждому владельцу</div>
+            </div>
+
+            <div class="comparison-grid">
+              <div class="comparison-card comparison-bad">
+                <div class="comparison-title">
+                  <span style="font-size: 18px">&#9888;</span>
+                  Как работаете сейчас
+                </div>
+                <ul class="list" style="font-size: 13px">
+                  <li>
+                    <span class="list-cross"></span
+                    ><span
+                      >Заказы принимаются
+                      <strong>по телефону, в WhatsApp, устно</strong> — нигде не
+                      фиксируются</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-cross"></span
+                    ><span
+                      >Менеджер <strong>держит всё в голове</strong> или
+                      записывает на бумажке — путает адреса, время, состав</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-cross"></span
+                    ><span
+                      >Флористу передают заказ
+                      <strong>голосом или пересылают фото</strong> — детали
+                      теряются</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-cross"></span
+                    ><span
+                      >Курьер <strong>звонит менеджеру уточнить адрес</strong> —
+                      а тот занят другим клиентом</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-cross"></span
+                    ><span
+                      ><strong>Усталость в праздники</strong> — при 100+ заказах
+                      в день ошибки неизбежны, люди физически не
+                      справляются</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-cross"></span
+                    ><span
+                      >Вы <strong>не знаете реальных цифр</strong>: сколько
+                      заработали, сколько потратили, кто работает, а кто
+                      нет</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-cross"></span
+                    ><span
+                      ><strong>Сотрудники могут обманывать</strong> — без
+                      системы вы не проверите ни одну цифру</span
+                    >
+                  </li>
+                </ul>
+              </div>
+              <div class="comparison-card comparison-good">
+                <div class="comparison-title">
+                  <span style="font-size: 18px">&#10003;</span>
+                  Как будет с FloraOrders
+                </div>
+                <ul class="list" style="font-size: 13px">
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      ><strong>Каждый заказ зафиксирован</strong> — клиент,
+                      сумма, адрес, время, исполнитель</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      >Менеджер заполняет карточку
+                      <strong>за 30 секунд</strong> — данные структурированы и
+                      не потеряются</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      >Флорист видит
+                      <strong>описание, фото, дедлайн</strong> прямо в
+                      приложении — не нужно спрашивать</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      >Курьер видит <strong>адрес, телефон, маршрут</strong> —
+                      не звонит менеджеру</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      ><strong>Система не устаёт</strong> — хоть 200 заказов в
+                      день, ни один не потеряется</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      >Вы видите <strong>доходы, расходы, прибыль</strong> в
+                      реальном времени со своего телефона</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      ><strong>Полная прозрачность</strong> — каждое действие
+                      сотрудника записывается в историю</span
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- SLIDE 2: Человеческий фактор — усталость и праздники -->
+          <section class="slide" data-index="2">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">
+                  Слайд 3 &middot; Человеческий фактор
+                </div>
+                <div class="section-title">
+                  Люди устают. Люди ошибаются. Система — нет.
+                </div>
+              </div>
+              <div class="section-tag">
+                Почему нельзя полагаться только на людей
+              </div>
+            </div>
+
+            <div class="two-cols">
+              <div>
+                <p class="text-muted" style="margin-bottom: 10px">
+                  В обычный день менеджер обрабатывает 15-20 заказов. В
+                  праздники — <strong>100-200 заказов</strong>. Это в 10 раз
+                  больше нагрузки. Человек физически не может запомнить и
+                  правильно передать 200 заказов за день. Ошибки неизбежны:
+                </p>
+
+                <div class="stat-grid" style="grid-template-columns: 1fr">
+                  <div
+                    class="stat-card"
+                    style="border-color: rgba(255, 94, 94, 0.15)"
+                  >
+                    <div class="stat-label">&#9888; Усталость = ошибки</div>
+                    <div class="stat-note" style="font-size: 12px">
+                      К концу праздничного дня менеджер работает 12+ часов без
+                      перерыва. Путает адреса, забывает передать заказ флористу,
+                      называет клиенту неправильное время. Каждая ошибка —
+                      потерянные деньги и репутация.
+                    </div>
+                  </div>
+                  <div
+                    class="stat-card"
+                    style="border-color: rgba(255, 94, 94, 0.15)"
+                  >
+                    <div class="stat-label">&#9888; Массовость заказов</div>
+                    <div class="stat-note" style="font-size: 12px">
+                      8 Марта: 150 заказов. 5 флористов, 3 курьера, 2 менеджера.
+                      Кто какой заказ собирает? Кто куда едет? Без системы это
+                      хаос, в котором <strong>теряются 5-10% заказов</strong> —
+                      просто забыли в потоке.
+                    </div>
+                  </div>
+                  <div
+                    class="stat-card"
+                    style="border-color: rgba(255, 94, 94, 0.15)"
+                  >
+                    <div class="stat-label">
+                      &#9888; Нет контроля за сотрудниками
+                    </div>
+                    <div class="stat-note" style="font-size: 12px">
+                      Менеджер говорит "всё сделано" — а вы не можете проверить.
+                      Курьер говорит "доставил в 14:00" — а клиент жалуется на
+                      опоздание. Без записей вы
+                      <strong>вынуждены верить на слово</strong>.
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p
+                  class="text-muted"
+                  style="margin-bottom: 8px; font-weight: 600"
+                >
+                  FloraOrders решает проблему человеческого фактора:
+                </p>
+
+                <div class="stat-grid" style="grid-template-columns: 1fr">
+                  <div
+                    class="stat-card"
+                    style="border-color: rgba(76, 175, 122, 0.2)"
+                  >
+                    <div class="stat-label">&#10003; Система помнит всё</div>
+                    <div class="stat-note" style="font-size: 12px">
+                      Каждый заказ записан с клиентом, адресом, временем, суммой
+                      и исполнителем. Даже если менеджер устал — система не
+                      забудет ни одного заказа.
+                    </div>
+                  </div>
+                  <div
+                    class="stat-card"
+                    style="border-color: rgba(76, 175, 122, 0.2)"
+                  >
+                    <div class="stat-label">
+                      &#10003; Каждое действие записывается
+                    </div>
+                    <div class="stat-note" style="font-size: 12px">
+                      Кто взял заказ, когда собрал, когда доставил — полная
+                      история. Сотрудник не может сказать "я не знал" или "мне
+                      не передали".
+                    </div>
+                  </div>
+                  <div
+                    class="stat-card"
+                    style="border-color: rgba(76, 175, 122, 0.2)"
+                  >
+                    <div class="stat-label">
+                      &#10003; Вы видите всё с телефона
+                    </div>
+                    <div class="stat-note" style="font-size: 12px">
+                      Даже если вас нет в магазине — вы в курсе всего. Сколько
+                      заказов, кто работает, сколько денег пришло.
+                      <strong>Полный контроль 24/7.</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <p
+                  class="text-muted"
+                  style="margin-top: 10px; text-align: center"
+                >
+                  <strong style="color: var(--accent)"
+                    >Работникам может быть непривычно — но для вас как владельца
+                    это необходимость.</strong
+                  >
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- SLIDE 3: Потери денег -->
+          <section class="slide" data-index="3">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">Слайд 4 &middot; Потери</div>
+                <div class="section-title">
+                  Сколько денег вы теряете без системы
+                </div>
+              </div>
+              <div class="section-tag">
+                Реальный расчёт для цветочного бизнеса
+              </div>
+            </div>
+
+            <div class="two-cols">
+              <div>
+                <p class="text-muted">
+                  Каждый забытый заказ, каждая ошибка в адресе, каждая задержка
+                  — это реальные деньги. Вот расчёт потерь за один праздничный
+                  день (8 Марта, 14 февраля):
+                </p>
+
+                <div class="loss-calculator">
+                  <div
+                    style="
+                      font-size: 12px;
+                      font-weight: 600;
+                      margin-bottom: 8px;
+                    "
+                  >
+                    Калькулятор потерь за 1 праздничный день
+                  </div>
+                  <div class="loss-row">
+                    <span class="loss-label"
+                      >Забытые/потерянные заказы (3-5 шт × ~5 000 &#8381;)</span
+                    >
+                    <span class="loss-value">15 000 - 25 000 &#8381;</span>
+                  </div>
+                  <div class="loss-row">
+                    <span class="loss-label"
+                      >Опоздания → скидки/возвраты (5-10 заказов)</span
+                    >
+                    <span class="loss-value">20 000 - 50 000 &#8381;</span>
+                  </div>
+                  <div class="loss-row">
+                    <span class="loss-label"
+                      >Перепутанные заказы → переделки (2-3 шт)</span
+                    >
+                    <span class="loss-value">10 000 - 20 000 &#8381;</span>
+                  </div>
+                  <div class="loss-row">
+                    <span class="loss-label"
+                      >Потерянные клиенты (негатив → уходят навсегда)</span
+                    >
+                    <span class="loss-value">50 000 - 150 000 &#8381;</span>
+                  </div>
+                  <div class="loss-row">
+                    <span class="loss-label"
+                      >Переработки команды → текучка кадров</span
+                    >
+                    <span class="loss-value">Бесценно</span>
+                  </div>
+                  <div class="loss-row">
+                    <span>ИТОГО за один праздник</span>
+                    <span class="loss-total">95 000 - 245 000 &#8381;</span>
+                  </div>
+                </div>
+
+                <p class="text-muted" style="margin-top: 10px">
+                  А таких пиковых дней в году <strong>минимум 5-7</strong>: 14
+                  февраля, 8 Марта, 1 сентября, День учителя, Новый год...
+                </p>
+                <p class="text-muted" style="margin-top: 6px">
+                  <strong style="color: #ff8e8e"
+                    >Итого потери за год: от 500 000 до 1 700 000
+                    &#8381;</strong
+                  >
+                </p>
+              </div>
+              <div>
+                <div class="stat-grid" style="grid-template-columns: 1fr 1fr">
+                  <div class="stat-card">
+                    <div class="stat-label">Обработка 1 заказа (сейчас)</div>
+                    <div class="stat-value danger">15-20 мин</div>
+                    <div class="stat-note">
+                      Записать, передать, уточнить, перезвонить
+                    </div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">
+                      Обработка 1 заказа (FloraOrders)
+                    </div>
+                    <div class="stat-value accent">30 сек</div>
+                    <div class="stat-note">
+                      Заполнил карточку — заказ виден всем
+                    </div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">Потерянных заказов в праздники</div>
+                    <div class="stat-value danger">3-5%</div>
+                    <div class="stat-note">Забыли, не передали, перепутали</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">
+                      Потерянных заказов с FloraOrders
+                    </div>
+                    <div class="stat-value accent">0%</div>
+                    <div class="stat-note">
+                      Каждый заказ в базе с дедлайном и ответственным
+                    </div>
+                  </div>
+                </div>
+                <p
+                  class="text-muted"
+                  style="margin-top: 12px; text-align: center"
+                >
+                  <strong style="color: var(--accent)"
+                    >Приложение окупается после первого же праздника.</strong
+                  >
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- SLIDE 4: Возможности — для владельца -->
+          <section class="slide" data-index="4">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">Слайд 5 &middot; Возможности</div>
+                <div class="section-title">
+                  Всё, что нужно владельцу для контроля бизнеса
+                </div>
+              </div>
+              <div class="section-tag">Ключевые функции</div>
+            </div>
+
+            <div class="feature-grid">
+              <div
+                class="feature-card"
+                style="border-color: rgba(255, 215, 0, 0.15)"
+              >
+                <div class="feature-card-icon">&#128176;</div>
+                <div class="feature-card-title">Финансовый контроль</div>
+                <div class="feature-card-desc">
+                  Доходы, расходы, прибыль за любой период. Разбивка по
+                  источникам клиентов, статусам оплаты. Только вы видите эти
+                  цифры — ни менеджер, ни другие сотрудники.
+                </div>
+              </div>
+              <div
+                class="feature-card"
+                style="border-color: rgba(255, 215, 0, 0.15)"
+              >
+                <div class="feature-card-icon">&#128200;</div>
+                <div class="feature-card-title">Статистика сотрудников</div>
+                <div class="feature-card-desc">
+                  Кто сколько заказов выполнил, среднее время работы, загрузка.
+                  Вы видите, кто работает эффективно, а кто нет. Объективные
+                  цифры вместо субъективных ощущений.
+                </div>
+              </div>
+              <div
+                class="feature-card"
+                style="border-color: rgba(255, 215, 0, 0.15)"
+              >
+                <div class="feature-card-icon">&#128221;</div>
+                <div class="feature-card-title">Учёт расходов бизнеса</div>
+                <div class="feature-card-desc">
+                  Аренда, зарплаты, закупки, транспорт, маркетинг — все расходы
+                  в одном месте. Видите реальную прибыль, а не только выручку.
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-card-icon">&#128221;</div>
+                <div class="feature-card-title">Управление заказами</div>
+                <div class="feature-card-desc">
+                  Создание за 30 секунд. Клиент, телефон, адрес, время, сумма,
+                  описание, фото — всё в одной карточке. Статусы от "Новый" до
+                  "Доставлен".
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-card-icon">&#128101;</div>
+                <div class="feature-card-title">4 роли сотрудников</div>
+                <div class="feature-card-desc">
+                  Владелец, менеджер, флорист, курьер — каждый видит только то,
+                  что ему нужно. Флорист не видит цены, курьер не видит финансы.
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-card-icon">&#128176;</div>
+                <div class="feature-card-title">Учёт оплат</div>
+                <div class="feature-card-desc">
+                  Три статуса: не оплачен (красный), аванс (оранжевый), оплачен
+                  (зелёный). Всегда видно, кто не заплатил и сколько денег в
+                  "подвисших" заказах.
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-card-icon">&#128270;</div>
+                <div class="feature-card-title">Умный поиск</div>
+                <div class="feature-card-desc">
+                  Нечёткий поиск с защитой от опечаток. Набрали "Ирна" — найдёт
+                  "Ирина". Ищет по имени, телефону, адресу и описанию букета.
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-card-icon">&#128666;</div>
+                <div class="feature-card-title">Пакетная доставка</div>
+                <div class="feature-card-desc">
+                  Курьер отмечает несколько заказов и берёт их все сразу. Видит
+                  адреса, может открыть навигатор одним нажатием.
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-card-icon">&#128247;</div>
+                <div class="feature-card-title">Фото заказов</div>
+                <div class="feature-card-desc">
+                  Флорист фотографирует готовый букет — фото прикрепляется к
+                  заказу. Контроль качества без необходимости быть в магазине.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SLIDE 5: Путь заказа -->
+          <section class="slide" data-index="5">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">Слайд 6 &middot; Как работает</div>
+                <div class="section-title">
+                  Путь заказа: от звонка клиентe� до букета в руках
+                </div>
+              </div>
+              <div class="section-tag">Полный контроль на каждом этапе</div>
+            </div>
+
+            <div
+              class="workflow-visual"
+              style="justify-content: center; margin-bottom: 12px"
+            >
+              <span class="workflow-step wf-new">НОВЫЙ</span>
+              <span class="workflow-arrow">&#8594;</span>
+              <span class="workflow-step wf-work">В РАБОТЕ</span>
+              <span class="workflow-arrow">&#8594;</span>
+              <span class="workflow-step wf-assembled">СОБРАН</span>
+              <span class="workflow-arrow">&#8594;</span>
+              <span class="workflow-step wf-delivery">ДОСТАВКА</span>
+              <span class="workflow-arrow">&#8594;</span>
+              <span class="workflow-step wf-done">ДОСТАВЛЕН</span>
+            </div>
+
+            <div class="timeline">
+              <div class="timeline-step">
+                <div class="timeline-step-icon">&#128222;</div>
+                <div class="timeline-step-label">1. Клиент обращается</div>
+                <div class="timeline-step-desc">
+                  Звонок, WhatsApp, Telegram, Instagram — любой канал
+                </div>
+              </div>
+              <div class="timeline-step">
+                <div class="timeline-step-icon">&#128221;</div>
+                <div class="timeline-step-label">2. Менеджер фиксирует</div>
+                <div class="timeline-step-desc">
+                  Карточка заказа за 30 секунд — все данные зафиксированы
+                </div>
+              </div>
+              <div class="timeline-step">
+                <div class="timeline-step-icon">&#127804;</div>
+                <div class="timeline-step-label">3. Флорист собирает</div>
+                <div class="timeline-step-desc">
+                  Видит задание, фото, дедлайн — прикрепляет фото результата
+                </div>
+              </div>
+              <div class="timeline-step">
+                <div class="timeline-step-icon">&#128666;</div>
+                <div class="timeline-step-label">4. Курьер доставляет</div>
+                <div class="timeline-step-desc">
+                  Адрес, телефон, навигатор — в одном экране
+                </div>
+              </div>
+              <div class="timeline-step">
+                <div class="timeline-step-icon">&#9989;</div>
+                <div class="timeline-step-label">5. Вы контролируете</div>
+                <div class="timeline-step-desc">
+                  Видите статус каждого заказа и работу каждого сотрудника
+                </div>
+              </div>
+            </div>
+
+            <p class="text-muted" style="text-align: center; margin-top: 12px">
+              <strong>На каждом этапе вы видите:</strong> кто ответственный,
+              какой статус, укладываемся ли в срок. <br />Ничего не теряется.
+              Ничего не забывается.
+              <strong
+                >Система работает за ваших сотрудников, а вы контролируете
+                результат.</strong
+              >
+            </p>
+
+            <div
+              class="stat-grid"
+              style="margin-top: 12px; grid-template-columns: repeat(4, 1fr)"
+            >
+              <div class="stat-card" style="text-align: center">
+                <div class="stat-label">Самоназначение</div>
+                <div class="stat-value accent" style="font-size: 14px">
+                  Флорист сам берёт заказ
+                </div>
+                <div class="stat-note">Не нужно звонить и назначать</div>
+              </div>
+              <div class="stat-card" style="text-align: center">
+                <div class="stat-label">Пакетный режим</div>
+                <div class="stat-value accent" style="font-size: 14px">
+                  Курьер берёт 5 заказов
+                </div>
+                <div class="stat-note">Одним нажатием</div>
+              </div>
+              <div class="stat-card" style="text-align: center">
+                <div class="stat-label">История действий</div>
+                <div class="stat-value accent" style="font-size: 14px">
+                  Полный аудит
+                </div>
+                <div class="stat-note">Кто, когда и что сделал</div>
+              </div>
+              <div class="stat-card" style="text-align: center">
+                <div class="stat-label">Просрочка</div>
+                <div class="stat-value accent" style="font-size: 14px">
+                  Предупреждение
+                </div>
+                <div class="stat-note">Система покажет просроченные</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SLIDE 6: Роли — акцент на контроль владельца -->
+          <section class="slide" data-index="6">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">Слайд 7 &middot; Роли</div>
+                <div class="section-title">
+                  Каждый видит только своё. Вы видите всё.
+                </div>
+              </div>
+              <div class="section-tag">4 роли — прозрачность и контроль</div>
+            </div>
+
+            <p class="text-muted" style="margin-bottom: 10px">
+              Сотрудники заходят под своим логином и видят только то, что нужно
+              для их работы.
+              <strong
+                >Только владелец имеет полный доступ ко всем данным и
+                финансам.</strong
+              >
+              Работникам может быть непривычно работать в системе — но именно
+              это даёт вам контроль, которого раньше не было.
+            </p>
+
+            <div class="role-grid">
+              <div
+                class="role-card"
+                style="border-color: rgba(255, 215, 0, 0.3); border-width: 2px"
+              >
+                <div class="role-icon">&#128081;</div>
+                <div class="role-title">Владелец (ВЫ)</div>
+                <div class="role-tag">Полный контроль всего бизнеса</div>
+                <ul class="role-list">
+                  <li>Все заказы и все данные</li>
+                  <li>Финансовые отчёты (только вы!)</li>
+                  <li>Бизнес-расходы (только вы!)</li>
+                  <li>Статистика сотрудников</li>
+                  <li>Управление командой</li>
+                  <li>Доходы, расходы, прибыль</li>
+                </ul>
+              </div>
+              <div
+                class="role-card"
+                style="border-color: rgba(59, 130, 246, 0.2)"
+              >
+                <div class="role-icon">&#128188;</div>
+                <div class="role-title">Менеджер</div>
+                <div class="role-tag">Приём и контроль заказов</div>
+                <ul class="role-list">
+                  <li>Создание заказов за 30 сек</li>
+                  <li>Назначение исполнителей</li>
+                  <li>Видит суммы и контакты</li>
+                  <li>Контроль статусов</li>
+                  <li>НЕ видит финансы бизнеса</li>
+                  <li>НЕ видит расходы</li>
+                </ul>
+              </div>
+              <div
+                class="role-card"
+                style="border-color: rgba(139, 92, 246, 0.2)"
+              >
+                <div class="role-icon">&#127804;</div>
+                <div class="role-title">Флорист</div>
+                <div class="role-tag">Только сборка</div>
+                <ul class="role-list">
+                  <li>Свои заказы и дедлайны</li>
+                  <li>Описание и фото букета</li>
+                  <li>НЕ видит цены и телефон</li>
+                  <li>Может сам взять заказ</li>
+                  <li>Фото готового букета</li>
+                  <li>Статус: В работе &#8594; Собран</li>
+                </ul>
+              </div>
+              <div
+                class="role-card"
+                style="border-color: rgba(56, 189, 248, 0.2)"
+              >
+                <div class="role-icon">&#128666;</div>
+                <div class="role-title">Курьер</div>
+                <div class="role-tag">Только доставка</div>
+                <ul class="role-list">
+                  <li>Адрес + телефон клиента</li>
+                  <li>НЕ видит суммы</li>
+                  <li>Навигация одним нажатием</li>
+                  <li>Пакетный режим (5+ заказов)</li>
+                  <li>Сам выбирает доставки</li>
+                  <li>Статус: Доставка &#8594; Готово</li>
+                </ul>
+              </div>
+            </div>
+
+            <p class="text-muted" style="margin-top: 10px; text-align: center">
+              <strong>Главное:</strong> флорист не узнает сумму заказа. Курьер
+              не увидит финансы. Менеджер не увидит прибыль бизнеса.
+              <strong>Только вы контролируете полную картину.</strong>
+            </p>
+          </section>
+
+          <!-- SLIDE 7: Аналитика и отчёты -->
+          <section class="slide" data-index="7">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">Слайд 8 &middot; Аналитика</div>
+                <div class="section-title">Знайте свой бизнес до копейки</div>
+              </div>
+              <div class="section-tag">Только для владельца</div>
+            </div>
+
+            <div class="two-cols">
+              <div>
+                <p class="text-muted" style="margin-bottom: 8px">
+                  Сейчас вы не знаете точно: сколько заработали за месяц? Какой
+                  канал приносит больше клиентов? Кто из флористов работает
+                  быстрее? С FloraOrders — знаете. И
+                  <strong>эти данные видите только вы</strong>.
+                </p>
+
+                <div class="report-mockup">
+                  <div class="report-header">
+                    <div class="report-title">Финансовый отчёт</div>
+                    <div class="report-period">Февраль 2026</div>
+                  </div>
+                  <div class="report-summary">
+                    <div class="report-summary-card">
+                      <div class="report-summary-value">847 500 &#8381;</div>
+                      <div class="report-summary-label">Доход</div>
+                    </div>
+                    <div
+                      class="report-summary-card"
+                      style="
+                        background: rgba(255, 94, 94, 0.08);
+                        border-color: rgba(255, 94, 94, 0.2);
+                      "
+                    >
+                      <div class="report-summary-value" style="color: #ff8e8e">
+                        234 000 &#8381;
+                      </div>
+                      <div class="report-summary-label">Расходы</div>
+                    </div>
+                    <div class="report-summary-card">
+                      <div class="report-summary-value">613 500 &#8381;</div>
+                      <div class="report-summary-label">Прибыль</div>
+                    </div>
+                  </div>
+
+                  <div
+                    style="
+                      margin-top: 10px;
+                      font-size: 11px;
+                      font-weight: 600;
+                      margin-bottom: 4px;
+                    "
+                  >
+                    По источникам клиентов
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label">WhatsApp</span
+                    ><span class="report-row-value"
+                      >312 000 &#8381; (42 заказа)</span
+                    >
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label">Instagram</span
+                    ><span class="report-row-value"
+                      >198 000 &#8381; (28 заказов)</span
+                    >
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label">Telegram</span
+                    ><span class="report-row-value"
+                      >156 000 &#8381; (19 заказов)</span
+                    >
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label">Телефон</span
+                    ><span class="report-row-value"
+                      >181 500 &#8381; (24 заказа)</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="report-mockup" style="margin-bottom: 10px">
+                  <div class="report-header">
+                    <div class="report-title">По статусу оплаты</div>
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label"
+                      ><span
+                        class="phone-payment-dot dot-paid"
+                        style="margin-right: 6px"
+                      ></span
+                      >Оплачен</span
+                    ><span class="report-row-value" style="color: var(--accent)"
+                      >624 000 &#8381;</span
+                    >
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label"
+                      ><span
+                        class="phone-payment-dot dot-advance"
+                        style="margin-right: 6px"
+                      ></span
+                      >Аванс</span
+                    ><span
+                      class="report-row-value"
+                      style="color: var(--warning)"
+                      >148 500 &#8381;</span
+                    >
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label"
+                      ><span
+                        class="phone-payment-dot dot-notpaid"
+                        style="margin-right: 6px"
+                      ></span
+                      >Не оплачен</span
+                    ><span class="report-row-value" style="color: var(--danger)"
+                      >75 000 &#8381;</span
+                    >
+                  </div>
+                </div>
+
+                <div class="report-mockup">
+                  <div class="report-header">
+                    <div class="report-title">Статистика сотрудников</div>
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label"
+                      >&#127804; Роза (флорист)</span
+                    ><span class="report-row-value"
+                      >32 заказа &middot; &#8709; 45 мин</span
+                    >
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label"
+                      >&#127804; Лилия (флорист)</span
+                    ><span class="report-row-value"
+                      >28 заказов &middot; &#8709; 52 мин</span
+                    >
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label"
+                      >&#128666; Тимур (курьер)</span
+                    ><span class="report-row-value"
+                      >41 доставка &middot; &#8709; 38 мин</span
+                    >
+                  </div>
+                  <div class="report-row">
+                    <span class="report-row-label"
+                      >&#128666; Руслан (курьер)</span
+                    ><span class="report-row-value"
+                      >35 доставок &middot; &#8709; 42 мин</span
+                    >
+                  </div>
+                </div>
+
+                <p class="text-muted" style="margin-top: 8px; font-size: 12px">
+                  <strong>Каждая строка кликабельна</strong> — нажмите и увидите
+                  конкретные заказы. Произвольный период: от дня до года.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- SLIDE 8: Интерфейс -->
+          <section class="slide" data-index="8">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">Слайд 9 &middot; Интерфейс</div>
+                <div class="section-title">
+                  Красивое приложение, которым удобно пользоваться
+                </div>
+              </div>
+              <div class="section-tag">iPhone + Android + компьютер</div>
+            </div>
+
+            <div class="three-cols">
+              <div>
+                <div
+                  style="
+                    text-align: center;
+                    margin-bottom: 8px;
+                    font-size: 13px;
+                    font-weight: 600;
+                  "
+                >
+                  Главный экран
+                </div>
+                <div class="phone-mockup" style="max-width: 200px">
+                  <div class="phone-notch"></div>
+                  <div class="phone-header">
+                    <div>
+                      <div style="font-size: 10px">Florica</div>
+                      <div style="font-size: 8px; color: var(--muted)">
+                        Владелец
+                      </div>
+                    </div>
+                    <div class="phone-header-icons">
+                      <div class="phone-header-icon" style="font-size: 8px">
+                        &#128176;
+                      </div>
+                      <div class="phone-header-icon" style="font-size: 8px">
+                        &#128200;
+                      </div>
+                      <div class="phone-header-icon" style="font-size: 8px">
+                        &#128101;
+                      </div>
+                    </div>
+                  </div>
+                  <div class="phone-status-tabs">
+                    <span class="phone-tab active">Все 24</span>
+                    <span class="phone-tab">Новый 5</span>
+                    <span class="phone-tab">Собран 4</span>
+                  </div>
+                  <div class="phone-search">&#128269; Поиск...</div>
+                  <div class="phone-order-card">
+                    <div class="phone-order-top">
+                      <span style="font-size: 9px">#1042</span
+                      ><span class="phone-order-badge badge-new">НОВЫЙ</span>
+                    </div>
+                    <div class="phone-order-name" style="font-size: 10px">
+                      Анна П. <span class="phone-payment-dot dot-paid"></span>
+                    </div>
+                    <div class="phone-order-meta">
+                      ул. Тверская &middot; 14:00
+                    </div>
+                  </div>
+                  <div class="phone-order-card">
+                    <div class="phone-order-top">
+                      <span style="font-size: 9px">#1041</span
+                      ><span class="phone-order-badge badge-work"
+                        >В РАБОТЕ</span
+                      >
+                    </div>
+                    <div class="phone-order-name" style="font-size: 10px">
+                      Дмитрий Н.
+                      <span class="phone-payment-dot dot-advance"></span>
+                    </div>
+                    <div class="phone-order-meta">
+                      Ленинский пр. &middot; 16:00
+                    </div>
+                  </div>
+                  <div class="phone-order-card">
+                    <div class="phone-order-top">
+                      <span style="font-size: 9px">#1040</span
+                      ><span class="phone-order-badge badge-delivery"
+                        >ДОСТАВКА</span
+                      >
+                    </div>
+                    <div class="phone-order-name" style="font-size: 10px">
+                      Елена В.
+                      <span class="phone-payment-dot dot-notpaid"></span>
+                    </div>
+                    <div class="phone-order-meta">
+                      Кутузовский &middot; 12:00
+                    </div>
+                  </div>
+                  <div class="phone-fab">+</div>
+                </div>
+              </div>
+
+              <div>
+                <div
+                  style="
+                    text-align: center;
+                    margin-bottom: 8px;
+                    font-size: 13px;
+                    font-weight: 600;
+                  "
+                >
+                  Создание заказа
+                </div>
+                <div class="phone-mockup" style="max-width: 200px">
+                  <div class="phone-notch"></div>
+                  <div class="phone-header">
+                    <span style="font-size: 11px">&#8592; Новый заказ</span
+                    ><span></span>
+                  </div>
+                  <div
+                    style="
+                      padding: 4px 8px;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 5px;
+                    "
+                  >
+                    <div style="font-size: 9px; color: var(--muted)">
+                      Имя клиента
+                    </div>
+                    <div
+                      style="
+                        background: rgba(255, 255, 255, 0.04);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 6px;
+                        padding: 4px 6px;
+                        font-size: 10px;
+                      "
+                    >
+                      Ольга Иванова
+                    </div>
+                    <div style="font-size: 9px; color: var(--muted)">
+                      Телефон
+                    </div>
+                    <div
+                      style="
+                        background: rgba(255, 255, 255, 0.04);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 6px;
+                        padding: 4px 6px;
+                        font-size: 10px;
+                      "
+                    >
+                      +7 916 123 45 67
+                    </div>
+                    <div style="font-size: 9px; color: var(--muted)">
+                      Источник клиента
+                    </div>
+                    <div style="display: flex; gap: 4px">
+                      <span
+                        style="
+                          padding: 2px 5px;
+                          border-radius: 4px;
+                          font-size: 8px;
+                          border: 1px solid rgba(255, 255, 255, 0.1);
+                          background: rgba(37, 211, 102, 0.15);
+                          color: #7ae693;
+                        "
+                        >WA</span
+                      >
+                      <span
+                        style="
+                          padding: 2px 5px;
+                          border-radius: 4px;
+                          font-size: 8px;
+                          border: 1px solid rgba(255, 255, 255, 0.1);
+                        "
+                        >TG</span
+                      >
+                      <span
+                        style="
+                          padding: 2px 5px;
+                          border-radius: 4px;
+                          font-size: 8px;
+                          border: 1px solid rgba(255, 255, 255, 0.1);
+                        "
+                        >IG</span
+                      >
+                      <span
+                        style="
+                          padding: 2px 5px;
+                          border-radius: 4px;
+                          font-size: 8px;
+                          border: 1px solid rgba(255, 255, 255, 0.1);
+                        "
+                        >&#128222;</span
+                      >
+                    </div>
+                    <div style="font-size: 9px; color: var(--muted)">
+                      Статус оплаты
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center">
+                      <span
+                        style="
+                          display: flex;
+                          align-items: center;
+                          gap: 3px;
+                          font-size: 8px;
+                        "
+                        ><span class="phone-payment-dot dot-notpaid"></span
+                        >Нет</span
+                      >
+                      <span
+                        style="
+                          display: flex;
+                          align-items: center;
+                          gap: 3px;
+                          font-size: 8px;
+                        "
+                        ><span class="phone-payment-dot dot-advance"></span
+                        >Аванс</span
+                      >
+                      <span
+                        style="
+                          display: flex;
+                          align-items: center;
+                          gap: 3px;
+                          font-size: 8px;
+                          padding: 2px 6px;
+                          border-radius: 6px;
+                          border: 1px solid rgba(76, 175, 122, 0.4);
+                          background: rgba(76, 175, 122, 0.1);
+                        "
+                        ><span class="phone-payment-dot dot-paid"></span
+                        >Оплачен</span
+                      >
+                    </div>
+                    <div style="font-size: 9px; color: var(--muted)">
+                      Описание букета
+                    </div>
+                    <div
+                      style="
+                        background: rgba(255, 255, 255, 0.04);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 6px;
+                        padding: 4px 6px;
+                        font-size: 9px;
+                        min-height: 30px;
+                      "
+                    >
+                      25 красных роз, атласная лента
+                    </div>
+                    <div
+                      style="
+                        margin-top: 4px;
+                        padding: 6px;
+                        border-radius: 8px;
+                        background: linear-gradient(130deg, #4caf7a, #2e8b57);
+                        text-align: center;
+                        font-size: 10px;
+                        font-weight: 600;
+                      "
+                    >
+                      Создать заказ
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div
+                  style="
+                    text-align: center;
+                    margin-bottom: 8px;
+                    font-size: 13px;
+                    font-weight: 600;
+                  "
+                >
+                  Финансовый отчёт
+                </div>
+                <div class="phone-mockup" style="max-width: 200px">
+                  <div class="phone-notch"></div>
+                  <div class="phone-header">
+                    <span style="font-size: 11px">&#8592; Отчёты</span
+                    ><span></span>
+                  </div>
+                  <div style="padding: 4px 8px">
+                    <div style="display: flex; gap: 3px; margin-bottom: 6px">
+                      <span
+                        style="
+                          padding: 2px 6px;
+                          border-radius: 6px;
+                          font-size: 8px;
+                          background: rgba(76, 175, 122, 0.15);
+                          border: 1px solid rgba(76, 175, 122, 0.3);
+                          color: #bdf5c9;
+                        "
+                        >Неделя</span
+                      >
+                      <span
+                        style="
+                          padding: 2px 6px;
+                          border-radius: 6px;
+                          font-size: 8px;
+                          border: 1px solid rgba(255, 255, 255, 0.1);
+                        "
+                        >Месяц</span
+                      >
+                      <span
+                        style="
+                          padding: 2px 6px;
+                          border-radius: 6px;
+                          font-size: 8px;
+                          border: 1px solid rgba(255, 255, 255, 0.1);
+                        "
+                        >3 мес</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        display: grid;
+                        grid-template-columns: 1fr 1fr 1fr;
+                        gap: 4px;
+                        margin-bottom: 6px;
+                      "
+                    >
+                      <div
+                        style="
+                          background: rgba(76, 175, 122, 0.08);
+                          border: 1px solid rgba(76, 175, 122, 0.2);
+                          border-radius: 8px;
+                          padding: 4px;
+                          text-align: center;
+                        "
+                      >
+                        <div
+                          style="
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: var(--accent);
+                          "
+                        >
+                          847K
+                        </div>
+                        <div style="font-size: 7px; color: var(--muted)">
+                          Доход
+                        </div>
+                      </div>
+                      <div
+                        style="
+                          background: rgba(255, 94, 94, 0.08);
+                          border: 1px solid rgba(255, 94, 94, 0.2);
+                          border-radius: 8px;
+                          padding: 4px;
+                          text-align: center;
+                        "
+                      >
+                        <div
+                          style="
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: #ff8e8e;
+                          "
+                        >
+                          234K
+                        </div>
+                        <div style="font-size: 7px; color: var(--muted)">
+                          Расход
+                        </div>
+                      </div>
+                      <div
+                        style="
+                          background: rgba(76, 175, 122, 0.08);
+                          border: 1px solid rgba(76, 175, 122, 0.2);
+                          border-radius: 8px;
+                          padding: 4px;
+                          text-align: center;
+                        "
+                      >
+                        <div
+                          style="
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: var(--accent);
+                          "
+                        >
+                          613K
+                        </div>
+                        <div style="font-size: 7px; color: var(--muted)">
+                          Прибыль
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      style="
+                        font-size: 8px;
+                        font-weight: 600;
+                        margin-bottom: 3px;
+                      "
+                    >
+                      По статусу оплаты
+                    </div>
+                    <div
+                      style="
+                        font-size: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 2px 0;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+                      "
+                    >
+                      <span style="color: var(--muted)"
+                        ><span
+                          class="phone-payment-dot dot-paid"
+                          style="width: 5px; height: 5px; margin-right: 3px"
+                        ></span
+                        >Оплачен</span
+                      ><span style="font-weight: 600; color: var(--accent)"
+                        >624K</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        font-size: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 2px 0;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+                      "
+                    >
+                      <span style="color: var(--muted)"
+                        ><span
+                          class="phone-payment-dot dot-advance"
+                          style="width: 5px; height: 5px; margin-right: 3px"
+                        ></span
+                        >Аванс</span
+                      ><span style="font-weight: 600; color: var(--warning)"
+                        >148K</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        font-size: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 2px 0;
+                      "
+                    >
+                      <span style="color: var(--muted)"
+                        ><span
+                          class="phone-payment-dot dot-notpaid"
+                          style="width: 5px; height: 5px; margin-right: 3px"
+                        ></span
+                        >Не оплачен</span
+                      ><span style="font-weight: 600; color: var(--danger)"
+                        >75K</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        font-size: 8px;
+                        font-weight: 600;
+                        margin: 6px 0 3px;
+                      "
+                    >
+                      По источнику
+                    </div>
+                    <div
+                      style="
+                        font-size: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 2px 0;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+                      "
+                    >
+                      <span style="color: var(--muted)">WhatsApp</span
+                      ><span style="font-weight: 600">312K (42)</span>
+                    </div>
+                    <div
+                      style="
+                        font-size: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 2px 0;
+                      "
+                    >
+                      <span style="color: var(--muted)">Instagram</span
+                      ><span style="font-weight: 600">198K (28)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SLIDE 9: Дополнительные возможности -->
+          <section class="slide" data-index="9">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">Слайд 10 &middot; Бонусы</div>
+                <div class="section-title">Что ещё умеет FloraOrders</div>
+              </div>
+              <div class="section-tag">Детали, которые делают разницу</div>
+            </div>
+
+            <div class="two-cols">
+              <div>
+                <ul class="list" style="font-size: 13px">
+                  <li>
+                    <span class="list-bullet"></span>
+                    <span
+                      ><strong>Тёмная и светлая тема</strong> — сотрудники
+                      выбирают удобный режим. В тёмном помещении магазина тёмная
+                      тема бережёт глаза.</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span>
+                    <span
+                      ><strong>Звонок клиенту в одно нажатие</strong> — прямо из
+                      карточки заказа, без копирования номера.</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span>
+                    <span
+                      ><strong>Навигация к адресу</strong> — нажал на адрес →
+                      открылись карты с маршрутом. Работает на iPhone и
+                      Android.</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span>
+                    <span
+                      ><strong>Чат с клиентом</strong> — нажал на иконку
+                      WhatsApp/Telegram рядом с заказом → открылся чат с этим
+                      клиентом.</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span>
+                    <span
+                      ><strong>Несколько флористов/курьеров на заказ</strong> —
+                      для крупных заказов можно назначить бригаду.</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span>
+                    <span
+                      ><strong>Источники клиентов</strong> — отслеживайте,
+                      откуда приходят заказы: WhatsApp, Telegram, Instagram,
+                      телефон, сайт.</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span>
+                    <span
+                      ><strong>Автоформат телефона</strong> — вводите цифры, а
+                      приложение само форматирует в +7 XXX XXX XX XX.</span
+                    >
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <div
+                  style="font-size: 13px; font-weight: 600; margin-bottom: 8px"
+                >
+                  Техническое преимущество
+                </div>
+                <ul class="list" style="font-size: 12px">
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      ><strong>Кроссплатформенность</strong> — iPhone, Android,
+                      компьютер</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      ><strong>Облачная база данных</strong> — данные не
+                      потеряются, даже если телефон сломается</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      ><strong>Мгновенное обновление</strong> — изменения видны
+                      всем сразу</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      ><strong>Безопасность</strong> — разграничение прав
+                      доступа, защита данных</span
+                    >
+                  </li>
+                </ul>
+
+                <div
+                  style="
+                    margin-top: 14px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    margin-bottom: 8px;
+                  "
+                >
+                  Почему это важно для владельца
+                </div>
+                <ul class="list" style="font-size: 12px">
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      >Вы
+                      <strong>не зависите от конкретного сотрудника</strong> —
+                      вся информация в системе, а не в его голове</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      >При увольнении <strong>ничего не теряется</strong> —
+                      новый сотрудник сразу видит все данные</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      >Вы <strong>контролируете бизнес удалённо</strong> — даже
+                      если вас нет в магазине</span
+                    >
+                  </li>
+                  <li>
+                    <span class="list-bullet"></span
+                    ><span
+                      ><strong>Объективные цифры</strong> вместо "мне кажется,
+                      мы нормально работаем"</span
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- SLIDE 10: Стоимость и CTA -->
+          <section class="slide" data-index="10">
+            <div class="slide-header-row">
+              <div>
+                <div class="section-kicker">Слайд 11 &middot; Предложение</div>
+                <div class="section-title">
+                  Инвестиция, которая окупается с первого праздника
+                </div>
+              </div>
+              <div class="section-tag">Специальное предложение</div>
+            </div>
+
+            <div class="two-cols">
+              <div>
+                <div class="price-highlight">
+                  <div class="price-label">Стоимость разработки</div>
+                  <div class="price-old">1 200 000 &#8381;</div>
+                  <div class="price-discount">Персональная скидка -63%</div>
+                  <div class="price-value">450 000 &#8381;</div>
+                  <div class="price-note">
+                    <strong>Полный функционал:</strong> управление заказами, 4
+                    роли сотрудников, финансовые отчёты, учёт расходов,
+                    статистика сотрудников, умный поиск, пакетная доставка, фото
+                    заказов, интеграция с мессенджерами.
+                  </div>
+                </div>
+
+                <div class="cost-comparison" style="margin-top: 12px">
+                  <div
+                    style="
+                      font-size: 12px;
+                      font-weight: 600;
+                      margin-bottom: 6px;
+                    "
+                  >
+                    Почему 450 000 &#8381; — это очень дешёво:
+                  </div>
+                  <div class="cost-row">
+                    <span class="cost-label"
+                      >Фриланс-разработка такого приложения</span
+                    >
+                    <span class="cost-value" style="color: #ff8e8e"
+                      >800 000 - 1 500 000 &#8381;</span
+                    >
+                  </div>
+                  <div class="cost-row">
+                    <span class="cost-label">Студия мобильной разработки</span>
+                    <span class="cost-value" style="color: #ff8e8e"
+                      >2 000 000 - 4 000 000 &#8381;</span
+                    >
+                  </div>
+                  <div class="cost-row">
+                    <span class="cost-label">Штатный разработчик (6 мес.)</span>
+                    <span class="cost-value" style="color: #ff8e8e"
+                      >900 000 - 1 800 000 &#8381;</span
+                    >
+                  </div>
+                  <div class="cost-row">
+                    <span class="cost-label"
+                      >Готовые SaaS-решения (подписка/год)</span
+                    >
+                    <span class="cost-value" style="color: #ff8e8e"
+                      >180 000 - 600 000 &#8381;/год</span
+                    >
+                  </div>
+                  <div
+                    class="cost-row"
+                    style="
+                      border-top: 1px solid rgba(76, 175, 122, 0.2);
+                      padding-top: 8px;
+                    "
+                  >
+                    <span
+                      class="cost-label"
+                      style="color: var(--text); font-weight: 600"
+                      >FloraOrders для вас</span
+                    >
+                    <span
+                      class="cost-value"
+                      style="color: var(--accent); font-size: 16px"
+                      >450 000 &#8381; (разово!)</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="stat-grid" style="grid-template-columns: 1fr">
+                  <div
+                    class="stat-card"
+                    style="border-color: rgba(76, 175, 122, 0.2)"
+                  >
+                    <div class="stat-label">
+                      &#10003; Разовый платёж — не подписка
+                    </div>
+                    <div class="stat-note" style="font-size: 12px">
+                      SaaS-решения стоят 15 000-50 000 &#8381;/мес и
+                      <strong>растут в цене каждый год</strong>. За 2-3 года вы
+                      заплатите больше, чем за FloraOrders. А здесь платите один
+                      раз — и приложение навсегда ваше.
+                    </div>
+                  </div>
+                  <div
+                    class="stat-card"
+                    style="border-color: rgba(76, 175, 122, 0.2)"
+                  >
+                    <div class="stat-label">
+                      &#10003; Окупаемость за 1 праздник
+                    </div>
+                    <div class="stat-note" style="font-size: 12px">
+                      Потери от ошибок в один праздничный день:
+                      <strong>95 000 - 245 000 &#8381;</strong>. За 2-3
+                      праздника приложение полностью окупится. Дальше — чистая
+                      прибыль от порядка.
+                    </div>
+                  </div>
+                  <div
+                    class="stat-card"
+                    style="border-color: rgba(76, 175, 122, 0.2)"
+                  >
+                    <div class="stat-label">&#10003; Эксклюзивный продукт</div>
+                    <div class="stat-note" style="font-size: 12px">
+                      Это
+                      <strong>индивидуальная разработка под ваш бизнес</strong>,
+                      а не массовый шаблон. Приложение заточено именно под
+                      специфику цветочного бизнеса — от сборки букетов до
+                      пакетной доставки.
+                    </div>
+                  </div>
+                  <div
+                    class="stat-card"
+                    style="border-color: rgba(76, 175, 122, 0.2)"
+                  >
+                    <div class="stat-label">
+                      &#10003; Никаких скрытых платежей
+                    </div>
+                    <div class="stat-note" style="font-size: 12px">
+                      450 000 &#8381; — это финальная цена. Установка и
+                      настройка включены. Никаких абонентских плат, комиссий с
+                      заказов или платных обновлений.
+                    </div>
+                  </div>
+                </div>
+
+                <p
+                  style="
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: var(--accent);
+                    margin-top: 10px;
+                    text-align: center;
+                  "
+                >
+                  Давайте обсудим запуск для вашего бизнеса.
+                </p>
+                <div
+                  class="hero-actions"
+                  style="justify-content: center; margin-top: 8px"
+                >
+                  <button class="btn-primary" data-goto="0">
+                    &#8592; Посмотреть презентацию заново
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="slider-controls">
+          <button class="nav-btn" id="prevBtn" disabled>&#8592;</button>
+          <div class="slider-dots" id="dotsContainer"></div>
+          <button class="nav-btn" id="nextBtn">&#8594;</button>
+        </div>
+      </div>
+
+      <footer>
+        FloraOrders &middot; Полный контроль цветочного бизнеса &middot; 2026
+      </footer>
+    </div>
+
+    <script>
+      const wrapper = document.getElementById("slidesWrapper");
+      const slides = document.querySelectorAll(".slide");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const dotsContainer = document.getElementById("dotsContainer");
+      let current = 0;
+      const total = slides.length;
+
+      slides.forEach((_, i) => {
+        const dot = document.createElement("span");
+        dot.className = "dot" + (i === 0 ? " active" : "");
+        dot.addEventListener("click", () => goTo(i));
+        dotsContainer.appendChild(dot);
+      });
+
+      const label = document.createElement("span");
+      label.className = "dot-label";
+      label.textContent = "1 / " + total;
+      dotsContainer.appendChild(label);
+
+      function goTo(n) {
+        current = Math.max(0, Math.min(n, total - 1));
+        wrapper.style.transform = "translateX(-" + current * 100 + "%)";
+        document
+          .querySelectorAll(".dot")
+          .forEach((d, i) => d.classList.toggle("active", i === current));
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === total - 1;
+        label.textContent = current + 1 + " / " + total;
+        slides[current].scrollTop = 0;
+      }
+
+      prevBtn.addEventListener("click", () => goTo(current - 1));
+      nextBtn.addEventListener("click", () => goTo(current + 1));
+
+      document.querySelectorAll("[data-goto]").forEach((btn) => {
+        btn.addEventListener("click", () => goTo(parseInt(btn.dataset.goto)));
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") goTo(current + 1);
+        if (e.key === "ArrowLeft" || e.key === "ArrowUp") goTo(current - 1);
+      });
+
+      let touchStartX = 0;
+      let touchEndX = 0;
+      const slider = document.getElementById("slider");
+      slider.addEventListener(
+        "touchstart",
+        (e) => {
+          touchStartX = e.changedTouches[0].screenX;
+        },
+        { passive: true },
+      );
+      slider.addEventListener(
+        "touchend",
+        (e) => {
+          touchEndX = e.changedTouches[0].screenX;
+          const diff = touchStartX - touchEndX;
+          if (Math.abs(diff) > 50) {
+            if (diff > 0) goTo(current + 1);
+            else goTo(current - 1);
+          }
+        },
+        { passive: true },
+      );
+
+      goTo(0);
+    </script>
+  </body>
+</html>

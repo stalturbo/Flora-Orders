@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FloraOrders - Инструкция по установке на VPS</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0a0a0a;
+  color: #e0e0e0;
+  line-height: 1.7;
+  padding: 20px;
+}
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+h1 {
+  color: #4CAF7A;
+  font-size: 28px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.subtitle {
+  text-align: center;
+  color: #8B9B8B;
+  margin-bottom: 40px;
+  font-size: 16px;
+}
+h2 {
+  color: #4CAF7A;
+  font-size: 20px;
+  margin: 30px 0 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #2A3E2A;
+}
+h3 {
+  color: #e0e0e0;
+  font-size: 16px;
+  margin: 20px 0 10px;
+}
+.step {
+  background: #1A2E1A;
+  border: 1px solid #2A3E2A;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+}
+.step-number {
+  display: inline-block;
+  background: #4CAF7A;
+  color: #0a0a0a;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 32px;
+  font-weight: bold;
+  margin-right: 10px;
+  font-size: 14px;
+}
+.step-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 12px;
+}
+pre {
+  background: #0D1F0D;
+  border: 1px solid #2A3E2A;
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  font-size: 14px;
+  margin: 10px 0;
+  position: relative;
+}
+code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  color: #4CAF7A;
+}
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #2A3E2A;
+  color: #8B9B8B;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.copy-btn:hover { background: #3A4E3A; color: #fff; }
+.warning {
+  background: #3d2e0a;
+  border: 1px solid #6b5a1e;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 12px 0;
+  color: #f0d060;
+  font-size: 14px;
+}
+.info {
+  background: #0a2a3d;
+  border: 1px solid #1e4a6b;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 12px 0;
+  color: #60b0f0;
+  font-size: 14px;
+}
+.success {
+  background: #0a3d1a;
+  border: 1px solid #1e6b2e;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 12px 0;
+  color: #60f080;
+  font-size: 14px;
+}
+ul { margin: 10px 0 10px 20px; }
+li { margin: 6px 0; }
+p { margin: 8px 0; }
+.tag {
+  display: inline-block;
+  background: #2A3E2A;
+  color: #4CAF7A;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-right: 6px;
+}
+.divider {
+  border: none;
+  border-top: 1px solid #2A3E2A;
+  margin: 40px 0;
+}
+.footer {
+  text-align: center;
+  color: #555;
+  margin-top: 40px;
+  font-size: 13px;
+}
+.highlight { color: #4CAF7A; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>FloraOrders</h1>
+<p class="subtitle">Пошаговая инструкция по установке на VPS (Timeweb)</p>
+
+<hr class="divider">
+
+<h2>Что вам понадобится</h2>
+<ul>
+  <li>VPS с Ubuntu 22.04 или 24.04 (уже куплен)</li>
+  <li>IP-адрес сервера и root-пароль (пришлют на почту)</li>
+  <li>Программа для подключения к серверу (см. ниже)</li>
+</ul>
+
+<hr class="divider">
+
+<div class="step">
+  <div class="step-title"><span class="step-number">1</span> Подключитесь к серверу</div>
+
+  <h3>Windows:</h3>
+  <p>Скачайте программу <a href="https://www.putty.org/" style="color:#4CAF7A" target="_blank">PuTTY</a> (бесплатная) или используйте <b>Windows Terminal</b> (есть в Windows 10/11).</p>
+  <p>В Windows Terminal или PowerShell введите:</p>
+  <pre><code>ssh root@ВАШ_IP_АДРЕС</code></pre>
+  <p>Введите пароль, который пришёл на почту.</p>
+
+  <h3>Mac / Linux:</h3>
+  <p>Откройте Терминал и введите:</p>
+  <pre><code>ssh root@ВАШ_IP_АДРЕС</code></pre>
+
+  <div class="info">При первом подключении спросят "Are you sure you want to continue connecting?" — напишите <code>yes</code> и нажмите Enter.</div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-number">2</span> Установите базовые компоненты</div>
+  <p>Скопируйте и вставьте эту команду целиком (одной строкой):</p>
+  <pre><code>apt-get update -y && apt-get upgrade -y && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs postgresql postgresql-contrib nginx git</code></pre>
+
+  <p>Проверьте что всё установилось:</p>
+  <pre><code>node -v && npm -v && psql --version && nginx -v</code></pre>
+  <div class="success">Должны показаться версии: Node.js v20.x, npm 10.x, PostgreSQL 16.x, nginx 1.x</div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-number">3</span> Настройте базу данных</div>
+  <p>Создайте базу данных и пользователя. Замените <code>ПРИДУМАЙТЕ_ПАРОЛЬ</code> на свой пароль (латинские буквы и цифры, без пробелов):</p>
+  <pre><code>sudo -u postgres psql -c "CREATE USER floraorders WITH PASSWORD 'ПРИДУМАЙТЕ_ПАРОЛЬ';"
+sudo -u postgres psql -c "CREATE DATABASE floraorders OWNER floraorders;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE floraorders TO floraorders;"</code></pre>
+
+  <div class="warning">Запишите этот пароль! Он понадобится на следующем шаге.</div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-number">4</span> Загрузите приложение на сервер</div>
+
+  <h3>Вариант A: Через GitHub (рекомендуется)</h3>
+  <p>Если код в GitHub-репозитории:</p>
+  <pre><code>cd /opt
+git clone https://github.com/ВАШ_ЛОГИН/floraorders.git
+cd floraorders</code></pre>
+
+  <h3>Вариант B: Загрузка архива</h3>
+  <p>На своём компьютере (не на сервере!) выполните:</p>
+  <pre><code>scp floraorders-deploy.tar.gz root@ВАШ_IP_АДРЕС:/opt/</code></pre>
+  <p>Затем на сервере:</p>
+  <pre><code>cd /opt
+mkdir -p floraorders
+cd floraorders
+tar -xzf /opt/floraorders-deploy.tar.gz</code></pre>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-number">5</span> Настройте приложение</div>
+
+  <p>Установите зависимости:</p>
+  <pre><code>cd /opt/floraorders
+npm install --omit=dev --ignore-scripts</code></pre>
+
+  <p>Создайте файл настроек. Замените <code>ВАШ_ПАРОЛЬ_БД</code> на пароль из шага 3:</p>
+  <pre><code>cat > /opt/floraorders/.env &lt;&lt; 'EOF'
+NODE_ENV=production
+PORT=5000
+DATABASE_URL=postgresql://floraorders:ВАШ_ПАРОЛЬ_БД@localhost:5432/floraorders
+SESSION_SECRET=ЗАМЕНИТЕ_НА_СЛУЧАЙНУЮ_СТРОКУ
+EOF</code></pre>
+
+  <div class="info">Для генерации случайной строки SESSION_SECRET можно использовать команду: <code>openssl rand -hex 32</code></div>
+
+  <p>Примените структуру базы данных:</p>
+  <pre><code>source /opt/floraorders/.env && export DATABASE_URL && npx drizzle-kit push --force</code></pre>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-number">6</span> Настройте автозапуск</div>
+
+  <p>Создайте системный сервис чтобы приложение запускалось автоматически:</p>
+  <pre><code>cat > /etc/systemd/system/floraorders.service &lt;&lt; 'EOF'
+[Unit]
+Description=FloraOrders Application
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/floraorders
+EnvironmentFile=/opt/floraorders/.env
+ExecStart=/usr/bin/node server_dist/index.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF</code></pre>
+
+  <p>Запустите приложение:</p>
+  <pre><code>systemctl daemon-reload
+systemctl enable floraorders
+systemctl start floraorders</code></pre>
+
+  <p>Проверьте что работает:</p>
+  <pre><code>systemctl status floraorders</code></pre>
+  <div class="success">Должно показать <code>active (running)</code> зелёным цветом.</div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-number">7</span> Настройте веб-сервер (Nginx)</div>
+  <p>Замените <code>ВАШ_IP_АДРЕС</code> на реальный IP вашего сервера:</p>
+  <pre><code>cat > /etc/nginx/sites-available/floraorders &lt;&lt; 'EOF'
+server {
+    listen 80;
+    server_name _;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 300s;
+    }
+}
+EOF</code></pre>
+
+  <p>Активируйте настройку:</p>
+  <pre><code>rm -f /etc/nginx/sites-enabled/default
+ln -sf /etc/nginx/sites-available/floraorders /etc/nginx/sites-enabled/floraorders
+nginx -t && systemctl reload nginx</code></pre>
+
+  <div class="success">Если всё правильно, увидите: <code>syntax is ok</code> и <code>test is successful</code></div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-number">8</span> Проверьте работу</div>
+  <p>Откройте в браузере:</p>
+  <pre><code>http://ВАШ_IP_АДРЕС</code></pre>
+  <div class="success">Вы увидите приложение FloraOrders! Теперь дайте этот адрес сотрудникам — они откроют его на телефоне в браузере.</div>
+</div>
+
+<hr class="divider">
+
+<h2>Полезные команды</h2>
+
+<div class="step">
+  <h3>Управление приложением:</h3>
+  <pre><code># Статус приложения
+systemctl status floraorders
+
+# Перезапуск
+systemctl restart floraorders
+
+# Остановка
+systemctl stop floraorders
+
+# Логи (последние 50 строк)
+journalctl -u floraorders -n 50
+
+# Логи в реальном времени
+journalctl -u floraorders -f</code></pre>
+
+  <h3>Обновление приложения:</h3>
+  <pre><code># Если через GitHub:
+cd /opt/floraorders
+git pull
+npm install --omit=dev --ignore-scripts
+systemctl restart floraorders
+
+# Если через архив:
+# Загрузите новый архив и распакуйте
+systemctl restart floraorders</code></pre>
+
+  <h3>Резервная копия базы данных:</h3>
+  <pre><code># Создать копию
+sudo -u postgres pg_dump floraorders > /opt/backup_$(date +%Y%m%d).sql
+
+# Восстановить из копии
+sudo -u postgres psql floraorders < /opt/backup_ДАТА.sql</code></pre>
+</div>
+
+<hr class="divider">
+
+<h2>Решение проблем</h2>
+
+<div class="step">
+  <h3>Приложение не запускается:</h3>
+  <pre><code>journalctl -u floraorders -n 100 --no-pager</code></pre>
+  <p>Ищите в логах строки с "Error" — это покажет причину.</p>
+
+  <h3>Сайт не открывается:</h3>
+  <pre><code># Проверьте что приложение работает
+curl http://localhost:5000
+
+# Проверьте Nginx
+nginx -t
+systemctl status nginx
+
+# Проверьте файрвол
+ufw status</code></pre>
+  <p>Если файрвол включён, откройте порт 80:</p>
+  <pre><code>ufw allow 80/tcp
+ufw allow 443/tcp</code></pre>
+
+  <h3>Ошибка подключения к базе данных:</h3>
+  <pre><code># Проверьте что PostgreSQL работает
+systemctl status postgresql
+
+# Проверьте подключение
+sudo -u postgres psql -c "\l"</code></pre>
+</div>
+
+<hr class="divider">
+
+<p class="footer">FloraOrders &copy; 2025 | Система управления заказами цветочного магазина</p>
+
+</div>
+
+<script>
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.onclick = () => {
+    navigator.clipboard.writeText(pre.querySelector('code').textContent);
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  };
+  pre.style.position = 'relative';
+  pre.appendChild(btn);
+});
+</script>
+</body>
+</html>
