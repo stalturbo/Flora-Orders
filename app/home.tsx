@@ -12,6 +12,7 @@ import { StatusFilter } from '@/components/StatusFilter';
 import { SearchBar } from '@/components/SearchBar';
 import { DashboardCard } from '@/components/DashboardCard';
 import * as Haptics from 'expo-haptics';
+import { IconButton } from "@/components/IconButton";
 
 function levenshtein(a: string, b: string): number {
   if (a.length === 0) return b.length;
@@ -176,96 +177,119 @@ export default function HomeScreen() {
   }, [isOwner, isManager, isFlorist, isCourier, colors]);
 
   const renderHeader = () => (
-    <View>
-      <View style={[styles.header, { paddingTop: insets.top + webTopInset + 16 }]}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.orgName} numberOfLines={1}>{organization?.name}</Text>
-            <Text style={styles.userName} numberOfLines={1}>{currentUser?.name}</Text>
-          </View>
-          <Pressable
-            style={styles.headerButton}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push('/settings');
-            }}
-          >
-            <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
-          </Pressable>
+  <View>
+    <View
+      style={[
+        styles.header,
+        { paddingTop: insets.top + webTopInset + 16 },
+      ]}
+    >
+      {/* ===== Верхняя строка ===== */}
+      <View style={styles.headerTop}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.orgName} numberOfLines={1}>
+            {organization?.name}
+          </Text>
+          <Text style={styles.userName} numberOfLines={1}>
+            {currentUser?.name}
+          </Text>
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.headerActions}
-        >
-          {headerButtons.filter(b => b.route !== '/settings').map((btn) => (
-            <Pressable
-              key={btn.route}
-              style={styles.headerButton}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push(btn.route as any);
-              }}
-            >
-              <Ionicons name={btn.icon as any} size={20} color={btn.color} />
-            </Pressable>
-          ))}
-        </ScrollView>
+
+        {/* Settings — делаем акцентной */}
+        <IconButton
+          icon="settings-outline"
+          size={44}
+          variant="primary"
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push("/settings");
+          }}
+        />
       </View>
 
-      {isOwner && (
-        <View style={styles.dashboard}>
-          <View style={styles.dashboardRow}>
-            <DashboardCard
-              title="Новых"
-              value={statusCounts.NEW}
-              icon="add-circle"
-              color={colors.statusNew}
-              onPress={() => setSelectedStatus('NEW')}
+      {/* ===== Горизонтальные действия ===== */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.headerActions}
+      >
+        {headerButtons
+          .filter((b) => b.route !== "/settings")
+          .map((btn) => (
+            <IconButton
+              key={btn.route}
+              icon={btn.icon as any}
+              size={42}
+              variant="surface"
+              onPress={() => {
+                Haptics.impactAsync(
+                  Haptics.ImpactFeedbackStyle.Light
+                );
+                router.push(btn.route as any);
+              }}
+              style={{ marginRight: 10 }}
             />
-            <DashboardCard
-              title="В работе"
-              value={statusCounts.IN_WORK}
-              icon="construct"
-              color={colors.statusInWork}
-              onPress={() => setSelectedStatus('IN_WORK')}
-            />
-          </View>
-          <View style={styles.dashboardRow}>
-            <DashboardCard
-              title="В доставке"
-              value={statusCounts.ON_DELIVERY}
-              icon="car"
-              color={colors.statusOnDelivery}
-              onPress={() => setSelectedStatus('ON_DELIVERY')}
-            />
-            <DashboardCard
-              title="Просрочено"
-              value={overdueOrders.length}
-              icon="alert-circle"
-              color={colors.error}
-            />
-          </View>
-        </View>
-      )}
+          ))}
+      </ScrollView>
+    </View>
 
-      {(isManager || isOwner) && (
-        <View style={styles.searchContainer}>
-          <SearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Поиск по имени, телефону, адресу..."
+    {/* ===== Dashboard ===== */}
+    {isOwner && (
+      <View style={styles.dashboard}>
+        <View style={styles.dashboardRow}>
+          <DashboardCard
+            title="Новых"
+            value={statusCounts.NEW}
+            icon="add-circle"
+            color={colors.statusNew}
+            onPress={() => setSelectedStatus("NEW")}
+          />
+          <DashboardCard
+            title="В работе"
+            value={statusCounts.IN_WORK}
+            icon="construct"
+            color={colors.statusInWork}
+            onPress={() => setSelectedStatus("IN_WORK")}
           />
         </View>
-      )}
+        <View style={styles.dashboardRow}>
+          <DashboardCard
+            title="В доставке"
+            value={statusCounts.ON_DELIVERY}
+            icon="car"
+            color={colors.statusOnDelivery}
+            onPress={() => setSelectedStatus("ON_DELIVERY")}
+          />
+          <DashboardCard
+            title="Просрочено"
+            value={overdueOrders.length}
+            icon="alert-circle"
+            color={colors.error}
+          />
+        </View>
+      </View>
+    )}
 
-      <StatusFilter
-        selectedStatus={selectedStatus}
-        onSelect={setSelectedStatus}
-        counts={statusCounts}
-      />
-    </View>
-  );
+    {/* ===== Поиск ===== */}
+    {(isManager || isOwner) && (
+      <View style={styles.searchContainer}>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Поиск по имени, телефону, адресу..."
+        />
+      </View>
+    )}
+
+    {/* ===== Фильтр статусов ===== */}
+    <StatusFilter
+      selectedStatus={selectedStatus}
+      onSelect={setSelectedStatus}
+      counts={statusCounts}
+    />
+  </View>
+);
+
 
   const renderItem = useCallback(({ item }: { item: Order }) => (
     <OrderCard
