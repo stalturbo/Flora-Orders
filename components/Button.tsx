@@ -1,72 +1,71 @@
-import React from 'react';
-import { Text, StyleSheet, Pressable, ActivityIndicator, ViewStyle } from 'react-native';
-import { useTheme } from '@/context/ThemeContext';
-import * as Haptics from 'expo-haptics';
+import React from "react";
+import {
+  Text,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
+  View,
+  ViewStyle,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "@/context/ThemeContext";
+import * as Haptics from "expo-haptics";
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger' | 'success';
-  size?: 'small' | 'medium' | 'large';
+  variant?: "primary" | "secondary" | "danger" | "success";
+  size?: "small" | "medium" | "large";
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
 }
 
-export function Button({ 
-  title, 
-  onPress, 
-  variant = 'primary', 
-  size = 'medium',
+export function Button({
+  title,
+  onPress,
+  variant = "primary",
+  size = "medium",
   disabled = false,
   loading = false,
   style,
 }: ButtonProps) {
   const { colors } = useTheme();
-  
-  const getBackgroundColor = () => {
-    if (disabled) return colors.border;
-    switch (variant) {
-      case 'secondary': return colors.primary + '15';
-      case 'danger': return colors.error;
-      case 'success': return colors.success;
-      default: return colors.primary;
-    }
-  };
-  
-  const getTextColor = () => {
-    if (disabled) return colors.textMuted;
-    switch (variant) {
-      case 'secondary': return colors.primary;
-      default: return '#fff';
-    }
-  };
-  
-  const getPadding = () => {
-    switch (size) {
-      case 'small': return { paddingVertical: 10, paddingHorizontal: 16 };
-      case 'large': return { paddingVertical: 16, paddingHorizontal: 24 };
-      default: return { paddingVertical: 13, paddingHorizontal: 20 };
-    }
-  };
-  
-  const getFontSize = () => {
-    switch (size) {
-      case 'small': return 13;
-      case 'large': return 17;
-      default: return 15;
-    }
-  };
-  
+
+  const pad =
+    size === "small"
+      ? { paddingVertical: 10, paddingHorizontal: 14 }
+      : size === "large"
+      ? { paddingVertical: 16, paddingHorizontal: 20 }
+      : { paddingVertical: 13, paddingHorizontal: 18 };
+
+  const fontSize = size === "small" ? 13 : size === "large" ? 16 : 14;
+
+  const radius = colors.tokens.radius.md;
+
+  const isSolid = variant === "primary" || variant === "danger" || variant === "success";
+
+  const textColor =
+    disabled
+      ? colors.textMuted
+      : variant === "secondary"
+      ? colors.primary
+      : "#fff";
+
+  const borderColor =
+    variant === "secondary" ? colors.border : "transparent";
+
+  const bgSecondary = colors.surfaceSecondary;
+
+  const solidGradient =
+    variant === "danger"
+      ? ["#EF4444", "#B91C1C"]
+      : variant === "success"
+      ? ["#10B981", "#059669"]
+      : [colors.primary, colors.primaryDark];
+
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.button,
-        { backgroundColor: getBackgroundColor() },
-        getPadding(),
-        pressed && !disabled && styles.pressed,
-        style,
-      ]}
       onPress={() => {
         if (!disabled && !loading) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -74,14 +73,35 @@ export function Button({
         }
       }}
       disabled={disabled || loading}
+      style={({ pressed }) => [
+        styles.btn,
+        { borderRadius: radius, borderColor },
+        pad,
+        pressed && !disabled && styles.pressed,
+        disabled && styles.disabled,
+        style,
+      ]}
     >
-      {loading ? (
-        <ActivityIndicator color={getTextColor()} size="small" />
+      {isSolid ? (
+        <LinearGradient
+          colors={disabled ? [colors.border, colors.border] : (solidGradient as any)}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
+        />
       ) : (
-        <Text style={[
-          styles.text,
-          { color: getTextColor(), fontSize: getFontSize() }
-        ]}>
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: bgSecondary, borderRadius: radius },
+          ]}
+        />
+      )}
+
+      {loading ? (
+        <ActivityIndicator color={textColor} />
+      ) : (
+        <Text style={[styles.text, { color: textColor, fontSize }]}>
           {title}
         </Text>
       )}
@@ -90,16 +110,22 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
-  button: {
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+  btn: {
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
   pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
+  },
+  disabled: {
+    opacity: 0.85,
   },
   text: {
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.2,
   },
 });
+
