@@ -1,87 +1,166 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
-import { useColorScheme } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+  useCallback,
+} from "react";
+import { useColorScheme } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type ThemeMode = 'light' | 'dark' | 'system';
+type ThemeMode = "light" | "dark" | "system";
+
+// ===== Brand =====
+const BRAND = {
+  primary: "#7b87c7",
+  primaryDark: "#6673b9",
+  primaryLight: "#9aa3de",
+  accent: "#f4b6c2", // нежный розовый акцент (можно потом поменять)
+};
+
+// ===== Design Tokens =====
+const TOKENS = {
+  radius: {
+    xs: 10,
+    sm: 12,
+    md: 16,
+    lg: 20,
+    xl: 24,
+    pill: 999,
+  },
+  spacing: {
+    xs: 8,
+    sm: 12,
+    md: 16,
+    lg: 20,
+    xl: 24,
+  },
+};
 
 const lightColors = {
-  primary: '#3B82F6',
-  primaryLight: '#60A5FA',
-  primaryDark: '#2563EB',
-  accent: '#F59E0B',
-  accentLight: '#FCD34D',
-  background: '#F8FAFC',
-  surface: '#FFFFFF',
-  surfaceSecondary: '#F1F5F9',
-  surfaceElevated: '#FFFFFF',
-  text: '#0F172A',
-  textLight: '#334155',
-  textSecondary: '#64748B',
-  textMuted: '#94A3B8',
-  border: '#E2E8F0',
-  borderLight: '#F1F5F9',
-  error: '#EF4444',
-  errorLight: '#FEF2F2',
-  success: '#10B981',
-  successLight: '#ECFDF5',
-  warning: '#F59E0B',
-  warningLight: '#FFFBEB',
-  statusNew: '#8B5CF6',
-  statusInWork: '#3B82F6',
-  statusAssembled: '#10B981',
-  statusOnDelivery: '#F97316',
-  statusDelivered: '#06B6D4',
-  statusCanceled: '#94A3B8',
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  shadow: 'rgba(0, 0, 0, 0.08)',
-  roleManager: '#3B82F6',
-  roleFlorist: '#EC4899',
-  roleCourier: '#F97316',
-  roleOwner: '#8B5CF6',
-  cardGradientStart: '#FFFFFF',
-  cardGradientEnd: '#F8FAFC',
-  inputBackground: '#FFFFFF',
-  inputBorder: '#E2E8F0',
+  // brand
+  primary: BRAND.primary,
+  primaryLight: BRAND.primaryLight,
+  primaryDark: BRAND.primaryDark,
+  accent: BRAND.accent,
+  accentLight: "#fde2e8",
+
+  // surfaces
+  background: "#F6F7FB",           // чуть сиреневый подтон
+  surface: "#FFFFFF",
+  surfaceSecondary: "#F1F2FA",     // мягкая подложка
+  surfaceElevated: "#FFFFFF",
+
+  // text
+  text: "#0F172A",
+  textLight: "#1F2937",
+  textSecondary: "#5B647A",
+  textMuted: "#8791A7",
+
+  // borders & shadows
+  border: "rgba(123,135,199,0.18)",
+  borderLight: "rgba(123,135,199,0.10)",
+  shadow: "rgba(15, 23, 42, 0.10)",
+
+  // feedback
+  error: "#EF4444",
+  errorLight: "#FEF2F2",
+  success: "#10B981",
+  successLight: "#ECFDF5",
+  warning: "#F59E0B",
+  warningLight: "#FFFBEB",
+
+  // statuses
+  statusNew: "#7b87c7",
+  statusInWork: "#5aa6e6",
+  statusAssembled: "#18b99a",
+  statusOnDelivery: "#f59e0b",
+  statusDelivered: "#22c3ee",
+  statusCanceled: "#9aa3b2",
+
+  // overlay
+  overlay: "rgba(0,0,0,0.40)",
+
+  // roles (можно потом привязать к бренду сильнее)
+  roleManager: "#7b87c7",
+  roleFlorist: "#ec6aa5",
+  roleCourier: "#f59e0b",
+  roleOwner: "#8b5cf6",
+
+  // gradients
+  cardGradientStart: "#FFFFFF",
+  cardGradientEnd: "#F6F7FB",
+
+  // inputs
+  inputBackground: "#FFFFFF",
+  inputBorder: "rgba(123,135,199,0.20)",
+
+  // tokens passthrough
+  tokens: TOKENS,
 };
 
 const darkColors = {
-  primary: '#60A5FA',
-  primaryLight: '#93C5FD',
-  primaryDark: '#3B82F6',
-  accent: '#FBBF24',
-  accentLight: '#FDE68A',
-  background: '#0F172A',
-  surface: '#1E293B',
-  surfaceSecondary: '#334155',
-  surfaceElevated: '#334155',
-  text: '#F1F5F9',
-  textLight: '#CBD5E1',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
-  border: '#334155',
-  borderLight: '#1E293B',
-  error: '#F87171',
-  errorLight: '#451A1A',
-  success: '#34D399',
-  successLight: '#064E3B',
-  warning: '#FBBF24',
-  warningLight: '#451A03',
-  statusNew: '#A78BFA',
-  statusInWork: '#60A5FA',
-  statusAssembled: '#34D399',
-  statusOnDelivery: '#FB923C',
-  statusDelivered: '#22D3EE',
-  statusCanceled: '#64748B',
-  overlay: 'rgba(0, 0, 0, 0.7)',
-  shadow: 'rgba(0, 0, 0, 0.3)',
-  roleManager: '#60A5FA',
-  roleFlorist: '#F472B6',
-  roleCourier: '#FB923C',
-  roleOwner: '#A78BFA',
-  cardGradientStart: '#1E293B',
-  cardGradientEnd: '#0F172A',
-  inputBackground: '#1E293B',
-  inputBorder: '#334155',
+  // brand
+  primary: "#9aa3de",
+  primaryLight: "#b6bdf0",
+  primaryDark: "#7b87c7",
+  accent: "#f4b6c2",
+  accentLight: "#6b3a44",
+
+  // surfaces
+  background: "#0B1020",
+  surface: "#141B2F",
+  surfaceSecondary: "#1B2440",
+  surfaceElevated: "#1B2440",
+
+  // text
+  text: "#EEF2FF",
+  textLight: "#D8DDF0",
+  textSecondary: "#AAB2D6",
+  textMuted: "#7A86AE",
+
+  // borders & shadows
+  border: "rgba(154,163,222,0.22)",
+  borderLight: "rgba(154,163,222,0.12)",
+  shadow: "rgba(0,0,0,0.45)",
+
+  // feedback
+  error: "#F87171",
+  errorLight: "#3A1515",
+  success: "#34D399",
+  successLight: "#063B2E",
+  warning: "#FBBF24",
+  warningLight: "#3B2A07",
+
+  // statuses
+  statusNew: "#9aa3de",
+  statusInWork: "#60a5fa",
+  statusAssembled: "#34d399",
+  statusOnDelivery: "#fbbf24",
+  statusDelivered: "#22d3ee",
+  statusCanceled: "#7A86AE",
+
+  // overlay
+  overlay: "rgba(0,0,0,0.65)",
+
+  // roles
+  roleManager: "#9aa3de",
+  roleFlorist: "#f472b6",
+  roleCourier: "#fbbf24",
+  roleOwner: "#a78bfa",
+
+  // gradients
+  cardGradientStart: "#1B2440",
+  cardGradientEnd: "#0B1020",
+
+  // inputs
+  inputBackground: "#141B2F",
+  inputBorder: "rgba(154,163,222,0.25)",
+
+  // tokens passthrough
+  tokens: TOKENS,
 };
 
 export type ThemeColors = typeof lightColors;
@@ -94,17 +173,16 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
-
-const THEME_STORAGE_KEY = '@flora_theme_mode';
+const THEME_STORAGE_KEY = "@flora_theme_mode";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemColorScheme = useColorScheme();
-  const [themeMode, setThemeModeState] = useState<ThemeMode>('dark');
+  const [themeMode, setThemeModeState] = useState<ThemeMode>("dark");
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(THEME_STORAGE_KEY).then((stored) => {
-      if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      if (stored === "light" || stored === "dark" || stored === "system") {
         setThemeModeState(stored);
       }
       setIsLoaded(true);
@@ -117,36 +195,30 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isDark = useMemo(() => {
-    if (themeMode === 'system') {
-      return systemColorScheme === 'dark';
-    }
-    return themeMode === 'dark';
+    if (themeMode === "system") return systemColorScheme === "dark";
+    return themeMode === "dark";
   }, [themeMode, systemColorScheme]);
 
-  const colors = isDark ? darkColors : lightColors;
+  const colors = (isDark ? darkColors : lightColors) as ThemeColors;
 
-  const value = useMemo(() => ({
-    colors,
-    isDark,
-    themeMode,
-    setThemeMode,
-  }), [colors, isDark, themeMode, setThemeMode]);
-
-  if (!isLoaded) {
-    return null;
-  }
-
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+  const value = useMemo(
+    () => ({
+      colors,
+      isDark,
+      themeMode,
+      setThemeMode,
+    }),
+    [colors, isDark, themeMode, setThemeMode]
   );
+
+  if (!isLoaded) return null;
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider');
-  }
+  if (!context) throw new Error("useTheme must be used within ThemeProvider");
   return context;
 }
+
