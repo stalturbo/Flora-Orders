@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useMemo, useCallback } from 'react';
+import { AppState, Platform } from 'react-native';
 import { Order, User, OrderStatus, OrderWithDetails } from '@/lib/types';
-import { api } from '@/lib/api';
+import { api, getToken } from '@/lib/api';
 import { useAuth } from './AuthContext';
+import { getApiUrl } from '@/lib/query-client';
 
 interface PeriodStats {
   ordersCreated: number;
@@ -55,7 +57,7 @@ interface DataContextValue {
   updateOrder: (id: string, data: Partial<Order>) => Promise<void>;
   deleteOrder: (orderId: string) => Promise<void>;
   updateOrderStatus: (orderId: string, newStatus: OrderStatus, note?: string) => Promise<void>;
-  addAttachment: (orderId: string, uri: string) => Promise<void>;
+  addAttachment: (orderId: string, base64: string, mimeType: string) => Promise<void>;
   deleteAttachment: (attachmentId: string) => Promise<void>;
   createUser: (user: { email: string; password: string; name: string; phone?: string; role: string }) => Promise<void>;
   updateUser: (id: string, data: Partial<User & { password?: string }>) => Promise<void>;
@@ -97,6 +99,67 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       };
       load();
+
+      let eventSource: EventSource | null = null;
+      let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+
+      const connectSSE = async () => {
+        try {
+          const token = await getToken();
+          if (!token) {
+            if (!fallbackInterval) {
+              fallbackInterval = setInterval(() => refreshOrders(), 5000);
+            }
+            setTimeout(connectSSE, 3000);
+            return;
+          }
+          const baseUrl = getApiUrl();
+          const url = new URL('/api/events', baseUrl);
+          url.searchParams.set('token', token);
+
+          if (typeof EventSource !== 'undefined') {
+            eventSource = new EventSource(url.toString());
+            eventSource.onmessage = (event) => {
+              try {
+                const data = JSON.parse(event.data);
+                if (data.type !== 'connected') {
+                  refreshOrders();
+                  refreshUsers();
+                }
+              } catch {}
+            };
+            eventSource.onopen = () => {
+              if (fallbackInterval) {
+                clearInterval(fallbackInterval);
+                fallbackInterval = null;
+              }
+            };
+            eventSource.onerror = () => {
+              eventSource?.close();
+              eventSource = null;
+              if (!fallbackInterval) {
+                fallbackInterval = setInterval(() => refreshOrders(), 10000);
+              }
+              setTimeout(connectSSE, 5000);
+            };
+          } else {
+            if (!fallbackInterval) {
+              fallbackInterval = setInterval(() => refreshOrders(), 5000);
+            }
+          }
+        } catch {
+          if (!fallbackInterval) {
+            fallbackInterval = setInterval(() => refreshOrders(), 5000);
+          }
+        }
+      };
+
+      connectSSE();
+
+      return () => {
+        eventSource?.close();
+        if (fallbackInterval) clearInterval(fallbackInterval);
+      };
     } else {
       setOrders([]);
       setUsers([]);
@@ -159,8 +222,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await refreshOrders();
   }, [refreshOrders]);
 
-  const addAttachment = useCallback(async (orderId: string, uri: string) => {
-    await api.orders.addAttachment(orderId, uri);
+  const addAttachment = useCallback(async (orderId: string, base64: string, mimeType: string) => {
+    await api.orders.addAttachment(orderId, base64, mimeType);
   }, []);
 
   const deleteAttachment = useCallback(async (attachmentId: string) => {

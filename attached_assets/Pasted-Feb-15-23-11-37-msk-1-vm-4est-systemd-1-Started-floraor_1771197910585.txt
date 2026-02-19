@@ -1,0 +1,56 @@
+Feb 15 23:11:37 msk-1-vm-4est systemd[1]: Started floraorders.service - FloraOrders Application.
+root@msk-1-vm-4est:/opt/floraorders# cd /opt/floraorders && wget -O deploy-package.tar.gz "https://tmpfiles.org/dl/24409870/deploy-package.bin" && tar xzf deploy-package.tar.gz && npm install --omit=dev --ignore-scripts && sudo systemctl restart floraorders && sleep 2 && sudo journalctl -u floraorders -n 30 --no-pager
+--2026-02-15 23:24:44--  https://tmpfiles.org/dl/24409870/deploy-package.bin
+Resolving tmpfiles.org (tmpfiles.org)... 2606:4700:3037::ac43:a189, 2606:4700:3035::6815:f2b, 104.21.15.43, ...
+Connecting to tmpfiles.org (tmpfiles.org)|2606:4700:3037::ac43:a189|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 6237334 (5.9M) [application/gzip]
+Saving to: ‘deploy-package.tar.gz’
+
+deploy-package.tar.gz             100%[=============================================================>]   5.95M  27.1MB/s    in 0.2s
+
+2026-02-15 23:24:44 (27.1 MB/s) - ‘deploy-package.tar.gz’ saved [6237334/6237334]
+
+
+up to date, audited 834 packages in 3s
+
+92 packages are looking for funding
+  run `npm fund` for details
+
+1 low severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:     at async file:///opt/floraorders/node_modules/drizzle-orm/node-postgres/session.js:83:22
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:     at async file:///opt/floraorders/server_dist/index.js:578:30 {
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   length: 119,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   severity: 'ERROR',
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   code: '42703',
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   detail: undefined,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   hint: undefined,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   position: '41',
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   internalPosition: undefined,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   internalQuery: undefined,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   where: undefined,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   schema: undefined,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   table: undefined,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   column: undefined,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   dataType: undefined,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   constraint: undefined,
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   file: 'parse_relation.c',
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   line: '3722',
+Feb 15 23:18:52 msk-1-vm-4est node[13036]:   routine: 'errorMissingColumn'
+Feb 15 23:18:52 msk-1-vm-4est node[13036]: }
+Feb 15 23:18:52 msk-1-vm-4est node[13036]: GET /api/orders/e835ec72-842c-423d-983c-8d04c7d48907 500 in 35ms :: {"message":…
+Feb 15 23:18:52 msk-1-vm-4est node[13036]: GET /api/orders/e835ec72-842c-423d-983c-8d04c7d48907/expenses 304 in 36ms :: []
+Feb 15 23:24:47 msk-1-vm-4est systemd[1]: Stopping floraorders.service - FloraOrders Application...
+Feb 15 23:24:47 msk-1-vm-4est systemd[1]: floraorders.service: Deactivated successfully.
+Feb 15 23:24:47 msk-1-vm-4est systemd[1]: Stopped floraorders.service - FloraOrders Application.
+Feb 15 23:24:47 msk-1-vm-4est systemd[1]: floraorders.service: Consumed 1.767s CPU time, 3.2M memory peak, 0B memory swap peak.
+Feb 15 23:24:47 msk-1-vm-4est systemd[1]: Started floraorders.service - FloraOrders Application.
+Feb 15 23:24:47 msk-1-vm-4est node[13308]: Production mode: serving web build from dist/
+Feb 15 23:24:47 msk-1-vm-4est node[13308]: express server serving on port 5000
+root@msk-1-vm-4est:/opt/floraorders#

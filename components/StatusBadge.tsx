@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { OrderStatus, ORDER_STATUS_LABELS } from '@/lib/types';
 import { useTheme } from '@/context/ThemeContext';
+import { fontSize, radius } from '@/lib/tokens';
 
 interface StatusBadgeProps {
   status: OrderStatus;
@@ -10,7 +11,7 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status, size = 'medium' }: StatusBadgeProps) {
   const { colors } = useTheme();
-  
+
   const statusColors: Record<OrderStatus, string> = {
     NEW: colors.statusNew,
     IN_WORK: colors.statusInWork,
@@ -19,21 +20,21 @@ export function StatusBadge({ status, size = 'medium' }: StatusBadgeProps) {
     DELIVERED: colors.statusDelivered,
     CANCELED: colors.statusCanceled,
   };
-  
+
   const color = statusColors[status];
   const isSmall = size === 'small';
-  
+
   return (
     <View style={[
       styles.badge,
-      { backgroundColor: color + '20' },
-      isSmall && styles.badgeSmall
+      { backgroundColor: color + '18' },
+      isSmall && styles.badgeSmall,
     ]}>
       <View style={[styles.dot, { backgroundColor: color }]} />
       <Text style={[
         styles.text,
         { color },
-        isSmall && styles.textSmall
+        isSmall && styles.textSmall,
       ]}>
         {ORDER_STATUS_LABELS[status]}
       </Text>
@@ -46,25 +47,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    gap: 5,
   },
   badgeSmall: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     gap: 4,
   },
   dot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
   },
   text: {
-    fontSize: 13,
+    fontSize: fontSize.secondary,
     fontFamily: 'Inter_600SemiBold',
   },
   textSmall: {
-    fontSize: 11,
+    fontSize: fontSize.badge,
   },
 });

@@ -12,7 +12,7 @@ import { StatusFilter } from '@/components/StatusFilter';
 import { SearchBar } from '@/components/SearchBar';
 import { DashboardCard } from '@/components/DashboardCard';
 import * as Haptics from 'expo-haptics';
-import { IconButton } from "@/components/IconButton";
+import { useCourierLocationTracker } from '@/lib/useCourierLocationTracker';
 
 function levenshtein(a: string, b: string): number {
   if (a.length === 0) return b.length;
@@ -41,6 +41,18 @@ export default function HomeScreen() {
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [showOverdueOnly, setShowOverdueOnly] = useState(false);
+
+  const isCourierRole = currentUser?.role === 'COURIER';
+  const courierActiveOrder = useMemo(() => {
+    if (!isCourierRole) return null;
+    return orders.find(o => o.courierId === currentUser?.id && ['NEW', 'IN_WORK', 'ASSEMBLED', 'ON_DELIVERY'].includes(o.status));
+  }, [orders, isCourierRole, currentUser?.id]);
+
+  const { trackingStatus, requestPermission, openSettings } = useCourierLocationTracker({
+    enabled: isCourierRole,
+    activeOrderId: courierActiveOrder?.id ?? null,
+  });
 
   useEffect(() => {
     if (!authLoading && !currentUser) {
@@ -64,6 +76,14 @@ export default function HomeScreen() {
 
   const filteredOrders = useMemo(() => {
     let result = orders;
+
+    if (showOverdueOnly) {
+      result = result.filter(o =>
+        o.status !== 'DELIVERED' &&
+        o.status !== 'CANCELED' &&
+        o.deliveryDateTime < Date.now()
+      );
+    }
 
     if (selectedStatus !== 'ALL') {
       result = result.filter(o => o.status === selectedStatus);
@@ -121,11 +141,17 @@ export default function HomeScreen() {
         .sort((a, b) => b.score - a.score)
         .map(s => s.order);
     } else {
-      result = result.sort((a, b) => a.deliveryDateTime - b.deliveryDateTime);
+      const terminalStatuses = new Set(['DELIVERED', 'CANCELED']);
+      result = result.sort((a, b) => {
+        const aTerminal = terminalStatuses.has(a.status) ? 1 : 0;
+        const bTerminal = terminalStatuses.has(b.status) ? 1 : 0;
+        if (aTerminal !== bTerminal) return aTerminal - bTerminal;
+        return a.deliveryDateTime - b.deliveryDateTime;
+      });
     }
 
     return result;
-  }, [orders, selectedStatus, searchQuery]);
+  }, [orders, selectedStatus, searchQuery, showOverdueOnly]);
 
   const statusCounts = useMemo(() => {
     const counts: Record<OrderStatus | 'ALL', number> = {
@@ -167,6 +193,7 @@ export default function HomeScreen() {
   const headerButtons = useMemo(() => {
     const buttons: Array<{ icon: string; color: string; route: string }> = [];
     if (isFlorist || isCourier) buttons.push({ icon: 'hand-left-outline', color: colors.primary, route: '/available-orders' });
+    if (isCourier) buttons.push({ icon: 'map-outline', color: colors.primary, route: '/courier-map' });
     if (isOwner) buttons.push({ icon: 'wallet-outline', color: colors.primary, route: '/financial-reports' });
     if (isOwner) buttons.push({ icon: 'receipt-outline', color: colors.primary, route: '/expenses' });
     if (isOwner || isManager) buttons.push({ icon: 'map-outline', color: colors.primary, route: '/delivery-map' });
@@ -177,101 +204,107 @@ export default function HomeScreen() {
   }, [isOwner, isManager, isFlorist, isCourier, colors]);
 
   const renderHeader = () => (
-  <View>
-    <View
-      style={[
-        styles.header,
-        { paddingTop: insets.top + webTopInset + 16 },
-      ]}
-    >
-      {/* ===== Верхняя строка ===== */}
-      <View style={styles.headerTop}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.orgName} numberOfLines={1}>
-            {organization?.name}
-          </Text>
-          <Text style={styles.userName} numberOfLines={1}>
-            {currentUser?.name}
-          </Text>
+    <View>
+      <View style={[styles.header, { paddingTop: insets.top + webTopInset + 16 }]}>
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.orgName} numberOfLines={1}>{organization?.name}</Text>
+            <Text style={styles.userName} numberOfLines={1}>{currentUser?.name}</Text>
+            {isCourierRole && trackingStatus === 'active' && courierActiveOrder && (
+              <View style={styles.trackingBadge}>
+                <View style={styles.trackingDot} />
+                <Text style={styles.trackingText}>Геолокация передаётся</Text>
+              </View>
+            )}
+            {isCourierRole && trackingStatus === 'active' && !courierActiveOrder && (
+              <View style={[styles.trackingBadge, { backgroundColor: colors.primary + '20' }]}>
+                <View style={[styles.trackingDot, { backgroundColor: colors.primary }]} />
+                <Text style={[styles.trackingText, { color: colors.primary }]}>Геолокация доступна</Text>
+              </View>
+            )}
+            {isCourierRole && trackingStatus === 'requesting' && (
+              <View style={[styles.trackingBadge, { backgroundColor: colors.warning + '20' }]}>
+                <View style={[styles.trackingDot, { backgroundColor: colors.warning }]} />
+                <Text style={[styles.trackingText, { color: colors.warning }]}>Запрос геолокации...</Text>
+              </View>
+            )}
+            {isCourierRole && (trackingStatus === 'permission_denied' || trackingStatus === 'error') && (
+              <Pressable
+                onPress={openSettings}
+                style={[styles.trackingBadge, { backgroundColor: colors.error + '20' }]}
+              >
+                <View style={[styles.trackingDot, { backgroundColor: colors.error }]} />
+                <Text style={[styles.trackingText, { color: colors.error }]}>Нет доступа к геолокации — нажмите для настроек</Text>
+              </Pressable>
+            )}
+          </View>
+          <Pressable
+            style={styles.headerButton}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/settings');
+            }}
+          >
+            <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
+          </Pressable>
         </View>
-
-        {/* Settings — делаем акцентной */}
-        <IconButton
-          icon="settings-outline"
-          size={44}
-          variant="primary"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.push("/settings");
-          }}
-        />
-      </View>
-
-      {/* ===== Горизонтальные действия ===== */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.headerActions}
-      >
-        {headerButtons
-          .filter((b) => b.route !== "/settings")
-          .map((btn) => (
-            <IconButton
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.headerActions}
+        >
+          {headerButtons.filter(b => b.route !== '/settings').map((btn) => (
+            <Pressable
               key={btn.route}
-              icon={btn.icon as any}
-              size={42}
-              variant="surface"
+              style={styles.headerButton}
               onPress={() => {
-                Haptics.impactAsync(
-                  Haptics.ImpactFeedbackStyle.Light
-                );
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 router.push(btn.route as any);
               }}
-              style={{ marginRight: 10 }}
-            />
+            >
+              <Ionicons name={btn.icon as any} size={20} color={btn.color} />
+            </Pressable>
           ))}
-      </ScrollView>
-    </View>
-
-    {/* ===== Dashboard ===== */}
-    {isOwner && (
-      <View style={styles.dashboard}>
-        <View style={styles.dashboardRow}>
-          <DashboardCard
-            title="Новых"
-            value={statusCounts.NEW}
-            icon="add-circle"
-            color={colors.statusNew}
-            onPress={() => setSelectedStatus("NEW")}
-          />
-          <DashboardCard
-            title="В работе"
-            value={statusCounts.IN_WORK}
-            icon="construct"
-            color={colors.statusInWork}
-            onPress={() => setSelectedStatus("IN_WORK")}
-          />
-        </View>
-        <View style={styles.dashboardRow}>
-          <DashboardCard
-            title="В доставке"
-            value={statusCounts.ON_DELIVERY}
-            icon="car"
-            color={colors.statusOnDelivery}
-            onPress={() => setSelectedStatus("ON_DELIVERY")}
-          />
-          <DashboardCard
-            title="Просрочено"
-            value={overdueOrders.length}
-            icon="alert-circle"
-            color={colors.error}
-          />
-        </View>
+        </ScrollView>
       </View>
-    )}
 
-    {/* ===== Поиск ===== */}
-    {(isManager || isOwner) && (
+      {isOwner && (
+        <View style={styles.dashboard}>
+          <View style={styles.dashboardRow}>
+            <DashboardCard
+              title="Новых"
+              value={statusCounts.NEW}
+              icon="add-circle"
+              color={colors.statusNew}
+              onPress={() => setSelectedStatus('NEW')}
+            />
+            <DashboardCard
+              title="В работе"
+              value={statusCounts.IN_WORK}
+              icon="construct"
+              color={colors.statusInWork}
+              onPress={() => setSelectedStatus('IN_WORK')}
+            />
+          </View>
+          <View style={styles.dashboardRow}>
+            <DashboardCard
+              title="В доставке"
+              value={statusCounts.ON_DELIVERY}
+              icon="car"
+              color={colors.statusOnDelivery}
+              onPress={() => setSelectedStatus('ON_DELIVERY')}
+            />
+            <DashboardCard
+              title="Просрочено"
+              value={overdueOrders.length}
+              icon="alert-circle"
+              color={colors.error}
+              onPress={() => setShowOverdueOnly(prev => !prev)}
+            />
+          </View>
+        </View>
+      )}
+
       <View style={styles.searchContainer}>
         <SearchBar
           value={searchQuery}
@@ -279,17 +312,31 @@ export default function HomeScreen() {
           placeholder="Поиск по имени, телефону, адресу..."
         />
       </View>
-    )}
 
-    {/* ===== Фильтр статусов ===== */}
-    <StatusFilter
-      selectedStatus={selectedStatus}
-      onSelect={setSelectedStatus}
-      counts={statusCounts}
-    />
-  </View>
-);
+      <StatusFilter
+        selectedStatus={selectedStatus}
+        onSelect={(status) => {
+          setSelectedStatus(status);
+          if (showOverdueOnly) setShowOverdueOnly(false);
+        }}
+        counts={statusCounts}
+      />
 
+      {showOverdueOnly && (
+        <View style={styles.overdueFilterBar}>
+          <View style={styles.overdueFilterContent}>
+            <Ionicons name="alert-circle" size={16} color={colors.error} />
+            <Text style={[styles.overdueFilterText, { color: colors.error }]}>
+              Просроченные заказы ({overdueOrders.length})
+            </Text>
+          </View>
+          <Pressable onPress={() => setShowOverdueOnly(false)}>
+            <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+          </Pressable>
+        </View>
+      )}
+    </View>
+  );
 
   const renderItem = useCallback(({ item }: { item: Order }) => (
     <OrderCard
@@ -369,10 +416,32 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textMuted,
   },
   userName: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
     color: colors.text,
     marginTop: 2,
+  },
+  trackingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    backgroundColor: colors.success + '18',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+  },
+  trackingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.success,
+    marginRight: 6,
+  },
+  trackingText: {
+    fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.success,
   },
   headerActions: {
     flexDirection: 'row',
@@ -380,24 +449,46 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingRight: 4,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: colors.surfaceSecondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dashboard: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 12,
+    paddingVertical: 14,
+    gap: 10,
   },
   dashboardRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   searchContainer: {
     paddingTop: 8,
+  },
+  overdueFilterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: colors.error + '10',
+    borderWidth: 1,
+    borderColor: colors.error + '25',
+  },
+  overdueFilterContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  overdueFilterText: {
+    fontSize: 13,
+    fontFamily: 'Inter_600SemiBold',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -421,16 +512,16 @@ const createStyles = (colors: any) => StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
     elevation: 6,
   },
 });

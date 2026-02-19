@@ -1,7 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -10,9 +10,26 @@ import { AuthProvider } from "@/context/AuthContext";
 import { DataProvider } from "@/context/DataContext";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { useFonts, Inter_400Regular, Inter_600SemiBold } from "@expo-google-fonts/inter";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { View, ActivityIndicator, StyleSheet, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 SplashScreen.preventAutoHideAsync();
+
+function BackButton({ tintColor }: { tintColor: string }) {
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/home');
+    }
+  }, []);
+
+  return (
+    <Pressable onPress={handleBack} style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8, paddingRight: 8, paddingVertical: 8 }}>
+      <Ionicons name="chevron-back" size={24} color={tintColor} />
+    </Pressable>
+  );
+}
 
 function ThemedStack() {
   const { colors } = useTheme();
@@ -21,6 +38,8 @@ function ThemedStack() {
     <Stack 
       screenOptions={{ 
         headerBackTitle: "Назад",
+        headerBackVisible: true,
+        headerLeft: () => <BackButton tintColor={colors.primary} />,
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.primary,
         headerTitleStyle: { fontFamily: 'Inter_600SemiBold', color: colors.text },
@@ -42,6 +61,7 @@ function ThemedStack() {
         options={{ 
           title: 'Новый заказ',
           presentation: 'modal',
+          headerLeft: undefined,
         }} 
       />
       <Stack.Screen 
@@ -49,6 +69,7 @@ function ThemedStack() {
         options={{ 
           title: 'Редактировать',
           presentation: 'modal',
+          headerLeft: undefined,
         }} 
       />
       <Stack.Screen 
@@ -62,6 +83,7 @@ function ThemedStack() {
         options={{ 
           title: 'Новый сотрудник',
           presentation: 'modal',
+          headerLeft: undefined,
         }} 
       />
       <Stack.Screen 
@@ -69,6 +91,7 @@ function ThemedStack() {
         options={{ 
           title: 'Редактировать',
           presentation: 'modal',
+          headerLeft: undefined,
         }} 
       />
       <Stack.Screen 
@@ -84,15 +107,39 @@ function ThemedStack() {
         }} 
       />
       <Stack.Screen 
+        name="financial-reports" 
+        options={{ 
+          title: 'Финансовые отчеты',
+        }} 
+      />
+      <Stack.Screen 
+        name="expenses" 
+        options={{ 
+          title: 'Расходы',
+        }} 
+      />
+      <Stack.Screen 
+        name="available-orders" 
+        options={{ 
+          title: 'Доступные заказы',
+        }} 
+      />
+      <Stack.Screen 
         name="delivery-map" 
         options={{ 
-          headerShown: false,
+          title: 'Карта доставок',
+        }} 
+      />
+      <Stack.Screen 
+        name="courier-map" 
+        options={{ 
+          title: 'Карта курьера',
         }} 
       />
       <Stack.Screen 
         name="dev-panel" 
         options={{ 
-          headerShown: false,
+          title: 'Dev Panel',
         }} 
       />
     </Stack>

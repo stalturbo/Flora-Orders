@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Elegant Floral Palette - Teal/Green Primary with Soft Backgrounds */
+  --background: 160 20% 98%;
+  --foreground: 160 50% 10%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 160 50% 10%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 160 50% 10%;
+
+  --primary: 165 60% 35%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 160 30% 90%;
+  --secondary-foreground: 165 60% 25%;
+
+  --muted: 160 20% 94%;
+  --muted-foreground: 160 20% 40%;
+
+  --accent: 330 60% 94%;  /* Soft pink accent for floral vibe */
+  --accent-foreground: 330 70% 35%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 160 20% 88%;
+  --input: 160 20% 88%;
+  --ring: 165 60% 35%;
+
+  --radius: 0.75rem;
+
+  /* Custom Status Colors */
+  --status-new: 210 100% 96%;
+  --status-new-fg: 210 80% 40%;
+  
+  --status-in-work: 45 100% 96%;
+  --status-in-work-fg: 45 90% 35%;
+  
+  --status-assembled: 270 100% 97%;
+  --status-assembled-fg: 270 70% 45%;
+  
+  --status-delivery: 25 100% 96%;
+  --status-delivery-fg: 25 90% 45%;
+  
+  --status-delivered: 150 80% 96%;
+  --status-delivered-fg: 150 80% 30%;
+  
+  --status-canceled: 0 0% 96%;
+  --status-canceled-fg: 0 0% 40%;
+}
+
+.dark {
+  --background: 160 40% 5%;
+  --foreground: 160 20% 90%;
+
+  --card: 160 40% 8%;
+  --card-foreground: 160 20% 90%;
+
+  --popover: 160 40% 8%;
+  --popover-foreground: 160 20% 90%;
+
+  --primary: 165 50% 45%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 160 30% 15%;
+  --secondary-foreground: 160 20% 90%;
+
+  --muted: 160 30% 15%;
+  --muted-foreground: 160 20% 60%;
+
+  --accent: 330 30% 20%;
+  --accent-foreground: 330 40% 80%;
+
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 160 30% 18%;
+  --input: 160 30% 18%;
+  --ring: 165 50% 45%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Status Badges */
+  .badge-new {
+    background-color: hsl(var(--status-new));
+    color: hsl(var(--status-new-fg));
+    border: 1px solid hsl(var(--status-new-fg) / 0.2);
+  }
+  .badge-in-work {
+    background-color: hsl(var(--status-in-work));
+    color: hsl(var(--status-in-work-fg));
+    border: 1px solid hsl(var(--status-in-work-fg) / 0.2);
+  }
+  .badge-assembled {
+    background-color: hsl(var(--status-assembled));
+    color: hsl(var(--status-assembled-fg));
+    border: 1px solid hsl(var(--status-assembled-fg) / 0.2);
+  }
+  .badge-delivery {
+    background-color: hsl(var(--status-delivery));
+    color: hsl(var(--status-delivery-fg));
+    border: 1px solid hsl(var(--status-delivery-fg) / 0.2);
+  }
+  .badge-delivered {
+    background-color: hsl(var(--status-delivered));
+    color: hsl(var(--status-delivered-fg));
+    border: 1px solid hsl(var(--status-delivered-fg) / 0.2);
+  }
+  .badge-canceled {
+    background-color: hsl(var(--status-canceled));
+    color: hsl(var(--status-canceled-fg));
+    border: 1px solid hsl(var(--status-canceled-fg) / 0.2);
+  }
+}
+
+/* Custom Animations */
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.glass-card {
+  background: hsl(var(--card) / 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.5);
+  box-shadow: 0 4px 20px -2px hsl(var(--foreground) / 0.05);
+}

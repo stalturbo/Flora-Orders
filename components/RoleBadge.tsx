@@ -1,20 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { UserRole, USER_ROLE_LABELS } from '@/lib/types';
-import colors from '@/constants/colors';
-
-const ROLE_COLORS: Record<UserRole, string> = {
-  MANAGER: colors.roleManager,
-  FLORIST: colors.roleFlorist,
-  COURIER: colors.roleCourier,
-  OWNER: colors.roleOwner,
-};
+import { useTheme } from '@/context/ThemeContext';
 
 interface RoleBadgeProps {
   role: UserRole;
 }
 
 export function RoleBadge({ role }: RoleBadgeProps) {
+  const { colors } = useTheme();
+  
+  const ROLE_COLORS: Record<UserRole, string> = {
+    MANAGER: colors.roleManager,
+    FLORIST: colors.roleFlorist,
+    COURIER: colors.roleCourier,
+    OWNER: colors.roleOwner,
+  };
+
   const color = ROLE_COLORS[role];
   
   return (

@@ -59,13 +59,35 @@ function setupCors(app: express.Application) {
 function setupBodyParsing(app: express.Application) {
   app.use(
     express.json({
+      limit: '100mb',
       verify: (req, _res, buf) => {
         req.rawBody = buf;
       },
     }),
   );
 
-  app.use(express.urlencoded({ extended: false }));
+  app.use(express.urlencoded({ extended: false, limit: '100mb' }));
+}
+
+function setupUploads(app: express.Application) {
+  const uploadsDir = path.resolve(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use('/uploads', express.static(uploadsDir, {
+    maxAge: '1h',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    },
+  }));
+  app.use('/api/uploads', express.static(uploadsDir, {
+    maxAge: '1h',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    },
+  }));
 }
 
 function setupRequestLogging(app: express.Application) {
@@ -112,7 +134,7 @@ function getAppName(): string {
   }
 }
 
-function serveExpoManifest(platform: string, res: Response) {
+function serveExpoManifest(platform: string, req: Request, res: Response) {
   const manifestPath = path.resolve(
     process.cwd(),
     "static-build",
@@ -126,12 +148,30 @@ function serveExpoManifest(platform: string, res: Response) {
       .json({ error: `Manifest not found for platform: ${platform}` });
   }
 
+  const forwardedProto = req.header("x-forwarded-proto");
+  const protocol = forwardedProto || req.protocol || "https";
+  const forwardedHost = req.header("x-forwarded-host");
+  const host = forwardedHost || req.get("host");
+  const baseUrl = `${protocol}://${host}`;
+
   res.setHeader("expo-protocol-version", "1");
   res.setHeader("expo-sfv-version", "0");
   res.setHeader("content-type", "application/json");
 
-  const manifest = fs.readFileSync(manifestPath, "utf-8");
-  res.send(manifest);
+  const manifestRaw = fs.readFileSync(manifestPath, "utf-8");
+  const manifest = JSON.parse(manifestRaw);
+
+  if (manifest.launchAsset && manifest.launchAsset.url) {
+    manifest.launchAsset.url = baseUrl + manifest.launchAsset.url;
+  }
+  if (manifest.assets) {
+    manifest.assets = manifest.assets.map((asset: { url: string; [key: string]: unknown }) => ({
+      ...asset,
+      url: baseUrl + asset.url,
+    }));
+  }
+
+  res.send(JSON.stringify(manifest));
 }
 
 function serveLandingPage({
@@ -167,7 +207,7 @@ function serveLandingPage({
 function configureExpoAndLanding(app: express.Application) {
   const isProduction = process.env.NODE_ENV === "production";
   const webDistPath = path.resolve(process.cwd(), "dist");
-  const hasWebBuild = isProduction && fs.existsSync(webDistPath);
+  const hasWebBuild = fs.existsSync(webDistPath) && fs.existsSync(path.join(webDistPath, "index.html"));
 
   const templatePath = path.resolve(
     process.cwd(),
@@ -236,18 +276,35 @@ function configureExpoAndLanding(app: express.Application) {
   }
 
   if (hasWebBuild) {
-    app.use(express.static(webDistPath));
+    app.use(express.static(webDistPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html') || filePath.endsWith('.json')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+        }
+      }
+    }));
 
     app.use((req: Request, res: Response, next: NextFunction) => {
       if (req.path.startsWith("/api")) {
         return next();
       }
-      if (req.path === "/presentation") {
+      if (req.path === "/presentation" || req.path === "/user-guide" || req.path === "/deploy-guide" || req.path === "/download-deploy") {
         return next();
+      }
+      if (req.path.startsWith("/deploy-file")) {
+        return next();
+      }
+
+      const platform = req.header("expo-platform");
+      if (platform && (platform === "ios" || platform === "android")) {
+        return serveExpoManifest(platform, req, res);
       }
 
       const indexPath = path.join(webDistPath, "index.html");
       if (fs.existsSync(indexPath)) {
+        res.setHeader('Cache-Control', 'no-cache');
         return res.sendFile(indexPath);
       }
       next();
@@ -264,7 +321,7 @@ function configureExpoAndLanding(app: express.Application) {
 
       const platform = req.header("expo-platform");
       if (platform && (platform === "ios" || platform === "android")) {
-        return serveExpoManifest(platform, res);
+        return serveExpoManifest(platform, req, res);
       }
 
       if (req.path === "/" && landingPageTemplate) {
@@ -310,6 +367,7 @@ function setupErrorHandler(app: express.Application) {
 (async () => {
   setupCors(app);
   setupBodyParsing(app);
+  setupUploads(app);
   setupRequestLogging(app);
 
   configureExpoAndLanding(app);

@@ -1,0 +1,68 @@
+root@msk-1-vm-4est:/opt/floraorders# cd /opt/floraorders && npm install drizzle-kit --save-dev && npx drizzle-kit push && systemctl
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+
+added 248 packages, and audited 1082 packages in 6s
+
+202 packages are looking for funding
+  run `npm fund` for details
+
+5 vulnerabilities (1 low, 4 moderate)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/opt/floraorders/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
+[✓] Changes applied
+  UNIT                                                                                         LOAD   ACTIVE SUB       DESCRIPTION     >
+  proc-sys-fs-binfmt_misc.automount                                                            loaded active running   Arbitrary Execut>
+  sys-devices-pci0000:00-0000:00:03.0-virtio0-net-eth0.device                                  loaded active plugged   Virtio network d>
+  sys-devices-pci0000:00-0000:00:04.0-virtio1-host0-target0:0:0-0:0:0:0-block-sda-sda1.device  loaded active plugged   QEMU_HARDDISK cl>
+  sys-devices-pci0000:00-0000:00:04.0-virtio1-host0-target0:0:0-0:0:0:0-block-sda-sda14.device loaded active plugged   QEMU_HARDDISK 14
+  sys-devices-pci0000:00-0000:00:04.0-virtio1-host0-target0:0:0-0:0:0:0-block-sda-sda15.device loaded active plugged   QEMU_HARDDISK UE>
+  sys-devices-pci0000:00-0000:00:04.0-virtio1-host0-target0:0:0-0:0:0:0-block-sda-sda16.device loaded active plugged   QEMU_HARDDISK BO>
+  sys-devices-pci0000:00-0000:00:04.0-virtio1-host0-target0:0:0-0:0:0:0-block-sda.device       loaded active plugged   QEMU_HARDDISK
+  sys-devices-pci0000:00-0000:00:05.0-virtio2-virtio\x2dports-vport2p1.device                  loaded active plugged   /sys/devices/pci>
+  sys-devices-pci0000:00-0000:00:07.0-virtio4-block-vda.device                                 loaded active plugged   /sys/devices/pci>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.1-tty-ttyS1.device                 loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.10-tty-ttyS10.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.11-tty-ttyS11.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.12-tty-ttyS12.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.13-tty-ttyS13.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.14-tty-ttyS14.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.15-tty-ttyS15.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.16-tty-ttyS16.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.17-tty-ttyS17.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.18-tty-ttyS18.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.19-tty-ttyS19.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.2-tty-ttyS2.device                 loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.20-tty-ttyS20.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.21-tty-ttyS21.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.22-tty-ttyS22.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.23-tty-ttyS23.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.24-tty-ttyS24.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.25-tty-ttyS25.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.26-tty-ttyS26.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.27-tty-ttyS27.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.28-tty-ttyS28.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.29-tty-ttyS29.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.3-tty-ttyS3.device                 loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.30-tty-ttyS30.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.31-tty-ttyS31.device               loaded active plugged   /sys/devices/pla>
+  sys-devices-platform-serial8250-serial8250:0-serial8250:0.4-tty-ttyS4.device                 loaded active plugged   /sys/devices/pla>
+root@msk-1-vm-4est:/opt/floraorders# start floraorders
+Command 'start' not found, did you mean:
+  command 'stat' from deb coreutils (9.4-3ubuntu6.1)
+  command 'rstart' from deb x11-session-utils (7.7+6)
+  command 'startx' from deb xinit (1.4.1-0ubuntu4)
+  command 'kstart' from deb kde-cli-tools (4:5.27.12-0ubuntu0.1)
+Try: apt install <deb name>
+root@msk-1-vm-4est:/opt/floraorders#

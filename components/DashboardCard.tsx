@@ -1,9 +1,9 @@
-import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "@/context/ThemeContext";
-import * as Haptics from "expo-haptics";
-import { GlassCard } from "@/components/GlassCard";
+import React from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/context/ThemeContext';
+import { spacing, radius, fontSize } from '@/lib/tokens';
+import * as Haptics from 'expo-haptics';
 
 interface DashboardCardProps {
   title: string;
@@ -14,11 +14,21 @@ interface DashboardCardProps {
 }
 
 export function DashboardCard({ title, value, icon, color, onPress }: DashboardCardProps) {
-  const { colors } = useTheme();
-  const r = colors.tokens.radius.md;
+  const { colors, isDark } = useTheme();
+
+  const glassBg = isDark ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.82)';
 
   return (
     <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        {
+          backgroundColor: glassBg,
+          borderColor: colors.borderLight,
+          shadowColor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.06)',
+        },
+        pressed && onPress && styles.cardPressed,
+      ]}
       onPress={() => {
         if (onPress) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -26,55 +36,49 @@ export function DashboardCard({ title, value, icon, color, onPress }: DashboardC
         }
       }}
       disabled={!onPress}
-      style={({ pressed }) => [
-        { flex: 1 },
-        pressed && onPress ? { opacity: 0.94, transform: [{ scale: 0.99 }] } : null,
-      ]}
     >
-      <GlassCard style={[styles.card, { borderRadius: r }]} padding={16}>
-        <View style={[styles.icon, { backgroundColor: color + "18" }]}>
-          <Ionicons name={icon} size={22} color={color} />
-        </View>
-        <Text style={[styles.value, { color: colors.text }]}>{value}</Text>
-        <Text style={[styles.title, { color: colors.textSecondary }]}>{title}</Text>
-        <View style={[styles.leftAccent, { backgroundColor: color }]} />
-      </GlassCard>
+      <View style={[styles.iconContainer, { backgroundColor: color + '14' }]}>
+        <Ionicons name={icon} size={22} color={color} />
+      </View>
+      <Text style={[styles.value, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.title, { color: colors.textSecondary }]}>{title}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    alignItems: "center",
-    position: "relative",
-    overflow: "hidden",
+    flex: 1,
+    borderRadius: radius.lg - 2,
+    borderWidth: 1,
+    padding: spacing.md,
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 3,
+    overflow: 'hidden',
   },
-  leftAccent: {
-    position: "absolute",
-    left: 0,
-    top: 12,
-    bottom: 12,
-    width: 4,
-    borderRadius: 4,
-    opacity: 0.9,
+  cardPressed: {
+    opacity: 0.96,
+    transform: [{ scale: 0.995 }],
   },
-  icon: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
   },
   value: {
-    fontSize: 28,
-    fontFamily: "Inter_600SemiBold",
+    fontSize: 26,
+    fontFamily: 'Inter_600SemiBold',
   },
   title: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    marginTop: 4,
-    textAlign: "center",
+    fontSize: fontSize.secondary,
+    fontFamily: 'Inter_400Regular',
+    marginTop: 3,
+    textAlign: 'center',
   },
 });
-

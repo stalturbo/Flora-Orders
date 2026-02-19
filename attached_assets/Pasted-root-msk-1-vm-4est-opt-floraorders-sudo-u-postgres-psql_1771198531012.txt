@@ -1,0 +1,48 @@
+root@msk-1-vm-4est:/opt/floraorders# sudo -u postgres psql -d floraorders -c "ALTER TABLE attachments ADD COLUMN IF NOT EXISTS uploaded_by_user_id VARCHAR;"
+NOTICE:  column "uploaded_by_user_id" of relation "attachments" already exists, skipping
+ALTER TABLE
+root@msk-1-vm-4est:/opt/floraorders# cd /opt/floraorders && wget -O deploy-package.tar.gz "https://tmpfiles.org/dl/24410633/deploy-package.bin" && tar xzf deploy-package.tar.gz && npm install --omit=dev --ignore-scripts && sudo systemctl restart floraorders && sleep 2 && sudo journalctl -u floraorders -n 20 --no-pager
+--2026-02-15 23:35:14--  https://tmpfiles.org/dl/24410633/deploy-package.bin
+Resolving tmpfiles.org (tmpfiles.org)... 2606:4700:3037::ac43:a189, 2606:4700:3035::6815:f2b, 104.21.15.43, ...
+Connecting to tmpfiles.org (tmpfiles.org)|2606:4700:3037::ac43:a189|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 6240886 (6.0M) [application/gzip]
+Saving to: ‘deploy-package.tar.gz’
+
+deploy-package.tar.gz             100%[=============================================================>]   5.95M  25.8MB/s    in 0.2s
+
+2026-02-15 23:35:15 (25.8 MB/s) - ‘deploy-package.tar.gz’ saved [6240886/6240886]
+
+
+up to date, audited 834 packages in 3s
+
+92 packages are looking for funding
+  run `npm fund` for details
+
+1 low severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+Feb 15 23:30:57 msk-1-vm-4est node[13370]: GET /api/users 304 in 10ms :: [{"id":"3501b0c9-6b0c-4aef-8ab9-c6c9dc8ff34d","or…
+Feb 15 23:30:58 msk-1-vm-4est node[13370]: GET /api/orders/e835ec72-842c-423d-983c-8d04c7d48907/expenses 304 in 20ms :: []
+Feb 15 23:30:58 msk-1-vm-4est node[13370]: GET /api/orders/e835ec72-842c-423d-983c-8d04c7d48907 304 in 27ms :: {"id":"e835…
+Feb 15 23:31:04 msk-1-vm-4est node[13370]: GET /api/auth/me 304 in 3ms :: {"user":{"id":"3501b0c9-6b0c-4aef-8ab9-c6c9dc8ff…
+Feb 15 23:31:04 msk-1-vm-4est node[13370]: GET /api/users 304 in 4ms :: [{"id":"3501b0c9-6b0c-4aef-8ab9-c6c9dc8ff34d","org…
+Feb 15 23:31:04 msk-1-vm-4est node[13370]: GET /api/orders 304 in 5ms :: [{"id":"98c6679f-363b-4ffd-93e6-848c5854349d","or…
+Feb 15 23:31:05 msk-1-vm-4est node[13370]: GET /api/orders/85e4a82f-ffa1-4d7b-8e41-c3a82c3f8c4a 200 in 9ms :: {"id":"85e4a…
+Feb 15 23:31:05 msk-1-vm-4est node[13370]: GET /api/orders/85e4a82f-ffa1-4d7b-8e41-c3a82c3f8c4a/expenses 304 in 4ms :: []
+Feb 15 23:31:09 msk-1-vm-4est node[13370]: POST /api/orders/85e4a82f-ffa1-4d7b-8e41-c3a82c3f8c4a/attachments 200 in 5ms ::…
+Feb 15 23:31:10 msk-1-vm-4est node[13370]: GET /api/orders/85e4a82f-ffa1-4d7b-8e41-c3a82c3f8c4a 200 in 9ms :: {"id":"85e4a…
+Feb 15 23:33:16 msk-1-vm-4est node[13370]: GET /api/auth/me 304 in 14ms :: {"user":{"id":"3501b0c9-6b0c-4aef-8ab9-c6c9dc8f…
+Feb 15 23:33:17 msk-1-vm-4est node[13370]: GET /api/orders 304 in 14ms :: [{"id":"98c6679f-363b-4ffd-93e6-848c5854349d","o…
+Feb 15 23:33:17 msk-1-vm-4est node[13370]: GET /api/users 304 in 25ms :: [{"id":"3501b0c9-6b0c-4aef-8ab9-c6c9dc8ff34d","or…
+Feb 15 23:35:18 msk-1-vm-4est systemd[1]: Stopping floraorders.service - FloraOrders Application...
+Feb 15 23:35:18 msk-1-vm-4est systemd[1]: floraorders.service: Deactivated successfully.
+Feb 15 23:35:18 msk-1-vm-4est systemd[1]: Stopped floraorders.service - FloraOrders Application.
+Feb 15 23:35:18 msk-1-vm-4est systemd[1]: floraorders.service: Consumed 1.089s CPU time.
+Feb 15 23:35:18 msk-1-vm-4est systemd[1]: Started floraorders.service - FloraOrders Application.
+Feb 15 23:35:18 msk-1-vm-4est node[13590]: Production mode: serving web build from dist/
+Feb 15 23:35:18 msk-1-vm-4est node[13590]: express server serving on port 5000
+root@msk-1-vm-4est:/opt/floraorders#

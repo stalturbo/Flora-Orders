@@ -583,56 +583,54 @@ export default function DevPanelScreen() {
       <Text style={styles.sectionTitle}>Общая статистика</Text>
       
       <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
-          <Ionicons name="business" size={24} color={colors.primary} />
+        <Pressable style={styles.statCard} onPress={() => { setActiveTab('orgs'); Haptics.selectionAsync(); }}>
+          <Ionicons name="business" size={20} color={colors.primary} />
           <Text style={styles.statValue}>{stats?.totalOrganizations || 0}</Text>
           <Text style={styles.statLabel}>Организаций</Text>
-        </View>
+        </Pressable>
         
-        <View style={styles.statCard}>
-          <Ionicons name="people" size={24} color="#3B82F6" />
+        <Pressable style={styles.statCard} onPress={() => { setActiveTab('users'); Haptics.selectionAsync(); }}>
+          <Ionicons name="people" size={20} color="#3B82F6" />
           <Text style={styles.statValue}>{stats?.totalUsers || 0}</Text>
           <Text style={styles.statLabel}>Пользователей</Text>
-        </View>
+        </Pressable>
         
-        <View style={styles.statCard}>
-          <Ionicons name="receipt" size={24} color="#F59E0B" />
+        <Pressable style={styles.statCard} onPress={() => { setActiveTab('orders'); Haptics.selectionAsync(); }}>
+          <Ionicons name="receipt" size={20} color="#F59E0B" />
           <Text style={styles.statValue}>{stats?.totalOrders || 0}</Text>
           <Text style={styles.statLabel}>Заказов</Text>
-        </View>
+        </Pressable>
         
-        <View style={styles.statCard}>
-          <Ionicons name="wifi" size={24} color="#10B981" />
+        <Pressable style={styles.statCard} onPress={() => { setActiveTab('sessions'); Haptics.selectionAsync(); }}>
+          <Ionicons name="wifi" size={20} color="#10B981" />
           <Text style={styles.statValue}>{stats?.activeSessions || 0}</Text>
-          <Text style={styles.statLabel}>Активных сессий</Text>
-        </View>
+          <Text style={styles.statLabel}>Сессий</Text>
+        </Pressable>
       </View>
       
-      <View style={styles.revenueCard}>
-        <Ionicons name="cash" size={32} color={colors.primary} />
+      <Pressable style={styles.revenueCard} onPress={() => { setActiveTab('orders'); Haptics.selectionAsync(); }}>
+        <Ionicons name="cash" size={24} color={colors.primary} />
         <View>
           <Text style={styles.revenueValue}>
             {(stats?.totalRevenue || 0).toLocaleString('ru-RU')} ₽
           </Text>
           <Text style={styles.revenueLabel}>Общая выручка (доставлено)</Text>
         </View>
-      </View>
+      </Pressable>
       
       {stats?.ordersByStatus && (
         <View style={styles.statusBreakdown}>
-          <Text style={styles.subsectionTitle}>Заказы по статусам</Text>
+          <Text style={styles.subsectionTitle}>По статусам</Text>
           {Object.entries(stats.ordersByStatus).map(([status, count]) => (
-            <View key={status} style={styles.statusRow}>
+            <Pressable key={status} style={styles.statusRow} onPress={() => { setActiveTab('orders'); Haptics.selectionAsync(); }}>
               <Text style={styles.statusName}>{status}</Text>
-              <Text style={styles.statusCount}>{count}</Text>
-            </View>
+              <Text style={styles.statusCount}>{count as number}</Text>
+            </Pressable>
           ))}
         </View>
       )}
       
       <View style={styles.actionsSection}>
-        <Text style={styles.subsectionTitle}>Действия</Text>
-        
         {actionMessage ? (
           <View style={styles.actionMessageContainer}>
             <Text style={styles.actionMessageText}>{actionMessage}</Text>
@@ -644,6 +642,7 @@ export default function DevPanelScreen() {
           onPress={handleGenerateTestData}
           loading={isGenerating}
           disabled={isGenerating}
+          size="small"
           style={styles.actionButton}
         />
         
@@ -653,6 +652,7 @@ export default function DevPanelScreen() {
           variant="danger"
           loading={isDeleting}
           disabled={isDeleting}
+          size="small"
           style={styles.actionButton}
         />
       </View>
@@ -1178,58 +1178,60 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    minWidth: 140,
+    minWidth: 70,
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 12,
+    padding: 10,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
   },
   statValue: {
-    fontSize: 28,
+    fontSize: 20,
     fontFamily: 'Inter_600SemiBold',
     color: colors.text,
-    marginTop: 8,
+    marginTop: 4,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: 'Inter_400Regular',
     color: colors.textSecondary,
-    marginTop: 4,
+    marginTop: 2,
+    textAlign: 'center' as const,
   },
   revenueCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 12,
     borderWidth: 1,
     borderColor: colors.primary + '40',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   revenueValue: {
-    fontSize: 24,
+    fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
     color: colors.primary,
   },
   revenueLabel: {
-    fontSize: 13,
+    fontSize: 11,
     fontFamily: 'Inter_400Regular',
     color: colors.textSecondary,
   },
   statusBreakdown: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 12,
+    padding: 10,
     borderWidth: 1,
     borderColor: colors.border,
+    marginBottom: 10,
   },
   statusRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 5,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -1378,15 +1380,15 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: '#F59E0B',
   },
   actionsSection: {
-    marginTop: 24,
-    padding: 16,
+    marginTop: 10,
+    padding: 12,
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
   },
   actionButton: {
-    marginTop: 12,
+    marginTop: 8,
   },
   actionMessageContainer: {
     padding: 12,

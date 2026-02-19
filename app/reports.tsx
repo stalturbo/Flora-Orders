@@ -80,6 +80,8 @@ export default function ReportsScreen() {
 
   useEffect(() => {
     loadReports();
+    const interval = setInterval(loadReports, 60000);
+    return () => clearInterval(interval);
   }, [loadReports]);
 
   const filteredReports = useMemo(() => {
@@ -155,7 +157,7 @@ export default function ReportsScreen() {
     }
   };
 
-  const handleOpenOrderList = async (userId: string, userName: string, type: OrderListType, count: number) => {
+  const handleOpenOrderList = async (userId: string, userName: string, type: OrderListType, count: number, usePeriod?: boolean) => {
     if (count === 0) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setModalTitle(ORDER_TYPE_TITLES[type]);
@@ -163,7 +165,7 @@ export default function ReportsScreen() {
     setModalVisible(true);
     setModalLoading(true);
     try {
-      const result = await api.stats.employeeOrders(userId, type);
+      const result = await api.stats.employeeOrders(userId, type, usePeriod ? period : undefined);
       setModalOrders(result);
     } catch (error) {
       console.error('Error loading employee orders:', error);
@@ -416,7 +418,7 @@ export default function ReportsScreen() {
                     <Pressable
                       style={styles.mainStatBadgeAbsolute}
                       onPress={() => {
-                        handleOpenOrderList(report.user.id, report.user.name, mainStat.type, mainStat.value);
+                        handleOpenOrderList(report.user.id, report.user.name, mainStat.type, mainStat.value, true);
                       }}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
@@ -432,18 +434,18 @@ export default function ReportsScreen() {
                         <>
                           <Pressable
                             style={({ pressed }) => [styles.miniStat, pressed && styles.miniStatPressed]}
-                            onPress={() => handleOpenOrderList(report.user.id, report.user.name, 'created', report.stats.ordersCreated)}
+                            onPress={() => handleOpenOrderList(report.user.id, report.user.name, 'created', periodData.ordersCreated, true)}
                           >
-                            <Text style={[styles.miniStatValue, report.stats.ordersCreated > 0 && styles.miniStatTappable]}>{report.stats.ordersCreated}</Text>
-                            <Text style={styles.miniStatLabel}>всего создано</Text>
+                            <Text style={[styles.miniStatValue, periodData.ordersCreated > 0 && styles.miniStatTappable]}>{periodData.ordersCreated}</Text>
+                            <Text style={styles.miniStatLabel}>создано</Text>
                           </Pressable>
                           <View style={styles.miniStatDivider} />
                           <Pressable
                             style={({ pressed }) => [styles.miniStat, pressed && styles.miniStatPressed]}
-                            onPress={() => handleOpenOrderList(report.user.id, report.user.name, 'delivered', report.stats.ordersCreated)}
+                            onPress={() => handleOpenOrderList(report.user.id, report.user.name, 'delivered', periodData.revenue || 0, true)}
                           >
-                            <Text style={[styles.miniStatValue, { color: colors.primary }, report.stats.ordersCreated > 0 && styles.miniStatTappable]}>
-                              {(report.stats.totalRevenueAsManager / 1000).toFixed(0)}к
+                            <Text style={[styles.miniStatValue, { color: colors.primary }, (periodData.revenue || 0) > 0 && styles.miniStatTappable]}>
+                              {((periodData.revenue || 0) / 1000).toFixed(0)}к
                             </Text>
                             <Text style={styles.miniStatLabel}>выручка</Text>
                           </Pressable>
@@ -453,10 +455,10 @@ export default function ReportsScreen() {
                         <>
                           <Pressable
                             style={({ pressed }) => [styles.miniStat, pressed && styles.miniStatPressed]}
-                            onPress={() => handleOpenOrderList(report.user.id, report.user.name, 'assembled', report.stats.ordersAssembled)}
+                            onPress={() => handleOpenOrderList(report.user.id, report.user.name, 'assembled', periodData.ordersAssembled, true)}
                           >
-                            <Text style={[styles.miniStatValue, report.stats.ordersAssembled > 0 && styles.miniStatTappable]}>{report.stats.ordersAssembled}</Text>
-                            <Text style={styles.miniStatLabel}>всего собрано</Text>
+                            <Text style={[styles.miniStatValue, periodData.ordersAssembled > 0 && styles.miniStatTappable]}>{periodData.ordersAssembled}</Text>
+                            <Text style={styles.miniStatLabel}>собрано</Text>
                           </Pressable>
                           <View style={styles.miniStatDivider} />
                           <Pressable
@@ -480,10 +482,10 @@ export default function ReportsScreen() {
                         <>
                           <Pressable
                             style={({ pressed }) => [styles.miniStat, pressed && styles.miniStatPressed]}
-                            onPress={() => handleOpenOrderList(report.user.id, report.user.name, 'delivered', report.stats.ordersDelivered)}
+                            onPress={() => handleOpenOrderList(report.user.id, report.user.name, 'delivered', periodData.ordersDelivered, true)}
                           >
-                            <Text style={[styles.miniStatValue, report.stats.ordersDelivered > 0 && styles.miniStatTappable]}>{report.stats.ordersDelivered}</Text>
-                            <Text style={styles.miniStatLabel}>всего доставок</Text>
+                            <Text style={[styles.miniStatValue, periodData.ordersDelivered > 0 && styles.miniStatTappable]}>{periodData.ordersDelivered}</Text>
+                            <Text style={styles.miniStatLabel}>доставок</Text>
                           </Pressable>
                           <View style={styles.miniStatDivider} />
                           <Pressable
@@ -503,14 +505,14 @@ export default function ReportsScreen() {
                           </Pressable>
                         </>
                       )}
-                      {report.stats.canceledByUser > 0 && (
+                      {(periodData.canceled || 0) > 0 && (
                         <>
                           <View style={styles.miniStatDivider} />
                           <Pressable
                             style={({ pressed }) => [styles.miniStat, pressed && styles.miniStatPressed]}
-                            onPress={() => handleOpenOrderList(report.user.id, report.user.name, 'canceled', report.stats.canceledByUser)}
+                            onPress={() => handleOpenOrderList(report.user.id, report.user.name, 'canceled', periodData.canceled || 0, true)}
                           >
-                            <Text style={[styles.miniStatValue, { color: colors.error }, styles.miniStatTappable]}>{report.stats.canceledByUser}</Text>
+                            <Text style={[styles.miniStatValue, { color: colors.error }, styles.miniStatTappable]}>{periodData.canceled}</Text>
                             <Text style={styles.miniStatLabel}>отменено</Text>
                           </Pressable>
                         </>

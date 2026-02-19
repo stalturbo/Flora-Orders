@@ -4,9 +4,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { useTheme } from '@/context/ThemeContext';
+import { resolvePhotoUri, getToken } from '@/lib/api';
+import { getApiUrl } from '@/lib/query-client';
 import { OrderWithDetails, OrderStatus, ORDER_STATUS_LABELS, USER_ROLE_LABELS, PaymentStatus, PAYMENT_STATUS_LABELS, CLIENT_SOURCE_LABELS, OrderAssistant } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/Button';
@@ -84,9 +87,14 @@ export default function OrderDetailScreen() {
 
   const loadOrder = useCallback(async () => {
     if (id) {
-      const data = await getOrderWithDetails(id);
-      setOrder(data);
-      if (data?.assistants) setAssistants(data.assistants);
+      try {
+        const data = await getOrderWithDetails(id);
+        setOrder(data);
+        if (data?.assistants) setAssistants(data.assistants);
+      } catch (error) {
+        console.error('Error loading order:', error);
+        Alert.alert('Ошибка', 'Не удалось загрузить заказ');
+      }
       setLoading(false);
     }
   }, [id, getOrderWithDetails]);
@@ -106,6 +114,41 @@ export default function OrderDetailScreen() {
   useEffect(() => {
     loadOrder();
     loadExpenses();
+
+    let eventSource: EventSource | null = null;
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+
+    const connectSSE = async () => {
+      try {
+        const token = await getToken();
+        if (!token || typeof EventSource === 'undefined') {
+          fallbackInterval = setInterval(() => loadOrder(), 5000);
+          return;
+        }
+        const baseUrl = getApiUrl();
+        const url = new URL('/api/events', baseUrl);
+        url.searchParams.set('token', token);
+        eventSource = new EventSource(url.toString());
+        eventSource.onmessage = () => {
+          loadOrder();
+          loadExpenses();
+        };
+        eventSource.onerror = () => {
+          eventSource?.close();
+          eventSource = null;
+          if (!fallbackInterval) fallbackInterval = setInterval(() => loadOrder(), 10000);
+          setTimeout(connectSSE, 5000);
+        };
+      } catch {
+        fallbackInterval = setInterval(() => loadOrder(), 5000);
+      }
+    };
+    connectSSE();
+
+    return () => {
+      eventSource?.close();
+      if (fallbackInterval) clearInterval(fallbackInterval);
+    };
   }, [loadOrder, loadExpenses]);
 
   const handleAddExpense = async () => {
@@ -216,18 +259,115 @@ export default function OrderDetailScreen() {
     }
   };
 
-  const handleAddPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 0.8,
-    });
+  const [uploading, setUploading] = useState(false);
 
-    if (!result.canceled && result.assets[0] && order) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      await addAttachment(order.id, result.assets[0].uri);
-      await loadOrder();
+  const compressImage = async (uri: string, originalWidth?: number, originalHeight?: number): Promise<string> => {
+    const MAX_DIMENSION = 2048;
+    const actions: ImageManipulator.Action[] = [];
+
+    if (originalWidth && originalHeight && (originalWidth > MAX_DIMENSION || originalHeight > MAX_DIMENSION)) {
+      const ratio = Math.min(MAX_DIMENSION / originalWidth, MAX_DIMENSION / originalHeight);
+      actions.push({ resize: { width: Math.round(originalWidth * ratio), height: Math.round(originalHeight * ratio) } });
     }
+
+    const result = await ImageManipulator.manipulateAsync(
+      uri,
+      actions,
+      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    );
+
+    return result.base64!;
+  };
+
+  const pickAndUploadPhoto = async (
+    pickerResult: ImagePicker.ImagePickerResult,
+    attachmentType: string = 'PHOTO'
+  ) => {
+    if (!pickerResult.canceled && pickerResult.assets[0] && order) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setUploading(true);
+      try {
+        const asset = pickerResult.assets[0];
+        let base64Data: string;
+
+        if (Platform.OS === 'web') {
+          const response = await fetch(asset.uri);
+          const blob = await response.blob();
+          base64Data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const dataUrl = reader.result as string;
+              resolve(dataUrl.split(',')[1]);
+            };
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsDataURL(blob);
+          });
+        } else {
+          base64Data = await compressImage(asset.uri, asset.width, asset.height);
+        }
+
+        await api.orders.addAttachment(order.id, base64Data, 'image/jpeg', attachmentType);
+        await loadOrder();
+      } catch (error: any) {
+        console.error('Photo upload error:', error);
+        Alert.alert('Ошибка', 'Не удалось загрузить фото');
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  const showPhotoPickerActionSheet = (attachmentType: string = 'PHOTO') => {
+    const cameraOption = Platform.OS === 'web' ? [] : [{
+      text: 'Камера',
+      onPress: async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Нет доступа', 'Разрешите доступ к камере в настройках');
+          return;
+        }
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          quality: 0.7,
+          base64: true,
+        });
+        await pickAndUploadPhoto(result, attachmentType);
+      },
+    }];
+
+    Alert.alert(
+      'Добавить фото',
+      'Выберите источник',
+      [
+        ...cameraOption,
+        {
+          text: 'Галерея',
+          onPress: async () => {
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ['images'],
+              allowsEditing: false,
+              quality: 0.7,
+              base64: Platform.OS !== 'web' ? true : undefined,
+            });
+            await pickAndUploadPhoto(result, attachmentType);
+          },
+        },
+        {
+          text: 'Отмена',
+          onPress: () => {},
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  const handleAddPhoto = () => {
+    showPhotoPickerActionSheet('PHOTO');
+  };
+
+  const handleAddPaymentProof = () => {
+    showPhotoPickerActionSheet('PAYMENT_PROOF');
   };
 
   const handleDeleteAttachment = (attachmentId: string) => {
@@ -549,6 +689,51 @@ export default function OrderDetailScreen() {
                       </View>
                     </>
                   )}
+
+                  <View style={styles.divider} />
+                  <View style={styles.infoRow}>
+                    <Ionicons name="receipt-outline" size={20} color={colors.textMuted} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.infoLabel}>Подтверждение оплаты</Text>
+                      {order.attachments.filter(a => a.type === 'PAYMENT_PROOF').length > 0 ? (
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                          {order.attachments.filter(a => a.type === 'PAYMENT_PROOF').map(att => {
+                            const photoUri = resolvePhotoUri(att.uri);
+                            if (!photoUri) return null;
+                            const canDelete = att.uploadedByUserId === currentUser?.id || isOwner || isManager;
+                            return (
+                              <Pressable
+                                key={att.id}
+                                style={styles.photoContainer}
+                                onPress={() => setSelectedPhoto(photoUri)}
+                              >
+                                <Image source={{ uri: photoUri }} style={[styles.photo, { width: 80, height: 80 }]} />
+                                {canDelete && (
+                                  <Pressable
+                                    style={styles.photoDeleteButton}
+                                    onPress={() => handleDeleteAttachment(att.id)}
+                                  >
+                                    <Ionicons name="close-circle" size={18} color="#fff" />
+                                  </Pressable>
+                                )}
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      ) : (
+                        <Text style={[styles.infoValue, { color: colors.textMuted }]}>Нет файлов</Text>
+                      )}
+                      {(isManager || isOwner) && (
+                        <Pressable
+                          style={[styles.addPhotoButton, { marginTop: 8 }]}
+                          onPress={handleAddPaymentProof}
+                        >
+                          <Ionicons name="attach" size={18} color={colors.primary} />
+                          <Text style={styles.addPhotoText}>Прикрепить</Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
                 </>
               )}
 
@@ -780,29 +965,49 @@ export default function OrderDetailScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Фото</Text>
-              {(isFlorist || isManager || isOwner) && (
-                <Pressable
-                  style={styles.addPhotoButton}
-                  onPress={handleAddPhoto}
-                >
-                  <Ionicons name="add" size={20} color={colors.primary} />
-                  <Text style={styles.addPhotoText}>Добавить</Text>
-                </Pressable>
+              {(isFlorist || isCourier || isManager || isOwner) && (
+                uploading ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={{ color: colors.textMuted, fontSize: 13 }}>Загрузка...</Text>
+                  </View>
+                ) : (
+                  <Pressable
+                    style={styles.addPhotoButton}
+                    onPress={handleAddPhoto}
+                  >
+                    <Ionicons name="add" size={20} color={colors.primary} />
+                    <Text style={styles.addPhotoText}>Добавить</Text>
+                  </Pressable>
+                )
               )}
             </View>
             
-            {order.attachments.length > 0 ? (
+            {order.attachments.filter(a => a.type !== 'PAYMENT_PROOF').length > 0 ? (
               <View style={styles.photoGrid}>
-                {order.attachments.map(attachment => (
-                  <Pressable
-                    key={attachment.id}
-                    style={styles.photoContainer}
-                    onPress={() => setSelectedPhoto(attachment.uri)}
-                    onLongPress={() => handleDeleteAttachment(attachment.id)}
-                  >
-                    <Image source={{ uri: attachment.uri }} style={styles.photo} />
-                  </Pressable>
-                ))}
+                {order.attachments.filter(a => a.type !== 'PAYMENT_PROOF').map(attachment => {
+                  const photoUri = resolvePhotoUri(attachment.uri);
+                  if (!photoUri) return null;
+                  const canDelete = attachment.uploadedByUserId === currentUser?.id || currentUser?.role === 'OWNER' || currentUser?.role === 'MANAGER';
+                  return (
+                    <Pressable
+                      key={attachment.id}
+                      style={styles.photoContainer}
+                      onPress={() => setSelectedPhoto(photoUri)}
+                      onLongPress={canDelete ? () => handleDeleteAttachment(attachment.id) : undefined}
+                    >
+                      <Image source={{ uri: photoUri }} style={styles.photo} />
+                      {canDelete && (
+                        <Pressable
+                          style={styles.photoDeleteButton}
+                          onPress={() => handleDeleteAttachment(attachment.id)}
+                        >
+                          <Ionicons name="close-circle" size={22} color="#fff" />
+                        </Pressable>
+                      )}
+                    </Pressable>
+                  );
+                })}
               </View>
             ) : (
               <View style={styles.emptyPhotos}>
@@ -1167,10 +1372,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 12,
     overflow: 'hidden',
+    position: 'relative' as const,
   },
   photo: {
     width: '100%',
     height: '100%',
+  },
+  photoDeleteButton: {
+    position: 'absolute' as const,
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 11,
   },
   emptyPhotos: {
     alignItems: 'center',

@@ -1,5 +1,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "node:http";
+import * as fs from "fs";
+import * as path from "path";
+import * as crypto from "crypto";
 import { db } from "./db";
 import { users, orders, attachments, orderHistory, organizations, devSettings, sessions, orderExpenses, businessExpenses, orderAssistants, courierLocationLatest, courierLocations } from "@shared/schema";
 import { eq, and, desc, gte, lte, sql, count, sum, isNull, inArray, or, max } from "drizzle-orm";
@@ -9,6 +12,17 @@ import type { User, Organization } from "@shared/schema";
 interface AuthRequest extends Request {
   user?: User;
   organization?: Organization;
+}
+
+const sseClients = new Map<string, Set<Response>>();
+
+function broadcastToOrg(organizationId: string, eventType: string, data?: any) {
+  const clients = sseClients.get(organizationId);
+  if (!clients) return;
+  const message = `data: ${JSON.stringify({ type: eventType, ...data })}\n\n`;
+  clients.forEach(res => {
+    try { res.write(message); } catch {}
+  });
 }
 
 async function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
@@ -36,6 +50,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (existingDevSettings.length === 0) {
     await db.insert(devSettings).values({ id: 'default', devPassword: '20242024' });
   }
+
+  app.get('/api/events', async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const token = (req.query.token as string) || req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    const session = await validateSession(token);
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    req.user = session.user;
+    const [org] = await db.select().from(organizations).where(eq(organizations.id, session.user.organizationId));
+    if (!org) return res.status(401).json({ error: 'Organization not found' });
+    req.organization = org;
+    next();
+  }, (req: AuthRequest, res: Response) => {
+    const orgId = req.organization!.id;
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'X-Accel-Buffering': 'no',
+    });
+
+    res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
+
+    if (!sseClients.has(orgId)) {
+      sseClients.set(orgId, new Set());
+    }
+    sseClients.get(orgId)!.add(res);
+
+    const heartbeat = setInterval(() => {
+      try { res.write(': heartbeat\n\n'); } catch {}
+    }, 30000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      sseClients.get(orgId)?.delete(res);
+      if (sseClients.get(orgId)?.size === 0) {
+        sseClients.delete(orgId);
+      }
+    });
+  });
 
   app.post('/api/auth/register', async (req: Request, res: Response) => {
     try {
@@ -219,30 +274,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get('/api/orders', authMiddleware, async (req: AuthRequest, res: Response) => {
-    let query = db
-      .select()
-      .from(orders)
-      .where(eq(orders.organizationId, req.organization!.id))
-      .orderBy(desc(orders.deliveryDateTime));
-    
-    const allOrders = await query;
-    
-    let filteredOrders = allOrders;
-    if (req.user!.role === 'FLORIST') {
-      filteredOrders = allOrders.filter(o => 
-        o.floristId === req.user!.id || 
-        (o.status === 'NEW' && !o.floristId)
-      );
-    } else if (req.user!.role === 'COURIER') {
-      filteredOrders = allOrders.filter(o => 
-        o.courierId === req.user!.id || 
-        (o.status === 'ASSEMBLED' && !o.courierId)
-      );
+    try {
+      let query = db
+        .select()
+        .from(orders)
+        .where(eq(orders.organizationId, req.organization!.id))
+        .orderBy(desc(orders.deliveryDateTime));
+      
+      const allOrders = await query;
+      
+      let filteredOrders = allOrders;
+      if (req.user!.role === 'FLORIST' || req.user!.role === 'COURIER') {
+        const assistantOrders = await db
+          .select({ orderId: orderAssistants.orderId })
+          .from(orderAssistants)
+          .where(eq(orderAssistants.userId, req.user!.id));
+        const assistantOrderIds = new Set(assistantOrders.map(a => a.orderId));
+
+        if (req.user!.role === 'FLORIST') {
+          filteredOrders = allOrders.filter(o => 
+            o.floristId === req.user!.id || assistantOrderIds.has(o.id)
+          );
+        } else {
+          filteredOrders = allOrders.filter(o => 
+            o.courierId === req.user!.id || assistantOrderIds.has(o.id)
+          );
+        }
+      }
+      
+      res.json(filteredOrders);
+    } catch (error: any) {
+      console.error('Error fetching orders:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch orders' });
     }
-    
-    res.json(filteredOrders);
   });
   
+  app.get('/api/orders/available', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const role = req.user!.role;
+      if (role !== 'FLORIST' && role !== 'COURIER') {
+        return res.status(403).json({ error: 'Доступно только флористам и курьерам' });
+      }
+
+      const allOrders = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.organizationId, req.organization!.id))
+        .orderBy(desc(orders.deliveryDateTime));
+
+      let available: typeof allOrders = [];
+      const terminalStatuses = ['DELIVERED', 'CANCELED'];
+      if (role === 'FLORIST') {
+        available = allOrders.filter(o => !o.floristId && !terminalStatuses.includes(o.status));
+      } else if (role === 'COURIER') {
+        available = allOrders.filter(o => !o.courierId && !terminalStatuses.includes(o.status));
+      }
+
+      res.json(available);
+    } catch (error: any) {
+      console.error('Error fetching available orders:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch available orders' });
+    }
+  });
+
   // GET /api/orders/with-coordinates - get all orders with coordinates for map display (owner/manager)
   app.get('/api/orders/with-coordinates', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
@@ -285,53 +379,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/orders/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(and(
-        eq(orders.id, req.params.id),
-        eq(orders.organizationId, req.organization!.id)
-      ));
-    
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-    
-    const orderAttachments = await db
-      .select()
-      .from(attachments)
-      .where(eq(attachments.orderId, order.id));
-    
-    const historyRaw = await db
-      .select()
-      .from(orderHistory)
-      .where(eq(orderHistory.orderId, order.id))
-      .orderBy(desc(orderHistory.changedAt));
+    try {
+      const [order] = await db
+        .select()
+        .from(orders)
+        .where(and(
+          eq(orders.id, req.params.id),
+          eq(orders.organizationId, req.organization!.id)
+        ));
+      
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+      
+      const orderAttachments = await db
+        .select()
+        .from(attachments)
+        .where(eq(attachments.orderId, order.id));
+      
+      const historyRaw = await db
+        .select()
+        .from(orderHistory)
+        .where(eq(orderHistory.orderId, order.id))
+        .orderBy(desc(orderHistory.changedAt));
 
-    const historyWithNames = await Promise.all(
-      historyRaw.map(async (h) => {
-        let changedByName = null;
-        if (h.changedByUserId) {
-          const [user] = await db.select().from(users).where(eq(users.id, h.changedByUserId));
-          changedByName = user?.name || null;
-        }
-        return { ...h, changedByName };
-      })
-    );
-    
-    const assistants = await db
-      .select()
-      .from(orderAssistants)
-      .where(eq(orderAssistants.orderId, order.id));
-    
-    const assistantsWithNames = await Promise.all(
-      assistants.map(async (a) => {
-        const [user] = await db.select().from(users).where(eq(users.id, a.userId));
-        return { ...a, userName: user?.name || 'Неизвестный' };
-      })
-    );
-    
-    res.json({ ...order, attachments: orderAttachments, history: historyWithNames, assistants: assistantsWithNames });
+      const historyWithNames = await Promise.all(
+        historyRaw.map(async (h) => {
+          let changedByName = null;
+          if (h.changedByUserId) {
+            const [user] = await db.select().from(users).where(eq(users.id, h.changedByUserId));
+            changedByName = user?.name || null;
+          }
+          return { ...h, changedByName };
+        })
+      );
+      
+      const assistants = await db
+        .select()
+        .from(orderAssistants)
+        .where(eq(orderAssistants.orderId, order.id));
+      
+      const assistantsWithNames = await Promise.all(
+        assistants.map(async (a) => {
+          const [user] = await db.select().from(users).where(eq(users.id, a.userId));
+          return { ...a, userName: user?.name || 'Неизвестный' };
+        })
+      );
+      
+      res.json({ ...order, attachments: orderAttachments, history: historyWithNames, assistants: assistantsWithNames });
+    } catch (error: any) {
+      console.error('Error fetching order details:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch order details' });
+    }
   });
   
   app.post('/api/orders', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -416,6 +515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     res.json(order);
+    broadcastToOrg(req.organization!.id, 'order_created');
   });
   
   app.put('/api/orders/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -472,6 +572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     res.json(updated);
+    broadcastToOrg(req.organization!.id, 'order_updated');
   });
   
   app.delete('/api/orders/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -487,42 +588,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ));
     
     res.json({ success: true });
+    broadcastToOrg(req.organization!.id, 'order_deleted');
   });
   
   app.post('/api/orders/:id/attachments', authMiddleware, async (req: AuthRequest, res: Response) => {
-    const { uri, type } = req.body;
-    
-    if (!uri) {
-      return res.status(400).json({ error: 'URI required' });
+    try {
+      const { base64, type, mimeType } = req.body;
+      
+      if (!base64) {
+        return res.status(400).json({ error: 'base64 data required' });
+      }
+      
+      const [order] = await db
+        .select()
+        .from(orders)
+        .where(and(
+          eq(orders.id, req.params.id),
+          eq(orders.organizationId, req.organization!.id)
+        ));
+      
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      const buffer = Buffer.from(base64, 'base64');
+      if (buffer.length === 0) {
+        return res.status(400).json({ error: 'Invalid image data' });
+      }
+      if (buffer.length > 50 * 1024 * 1024) {
+        return res.status(400).json({ error: 'Image too large (max 50MB)' });
+      }
+
+      const ext = (mimeType || 'image/jpeg').split('/')[1] || 'jpg';
+      const filename = `${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
+      const uploadsDir = path.resolve(process.cwd(), 'uploads');
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+      fs.writeFileSync(path.join(uploadsDir, filename), buffer);
+      const finalUri = `/api/uploads/${filename}`;
+      
+      const [attachment] = await db
+        .insert(attachments)
+        .values({
+          orderId: order.id,
+          type: type || 'PHOTO',
+          uri: finalUri,
+          uploadedByUserId: req.user!.id,
+        })
+        .returning();
+      
+      res.json(attachment);
+      broadcastToOrg(req.organization!.id, 'attachment_added');
+    } catch (error: any) {
+      console.error('Attachment upload error:', error);
+      res.status(500).json({ error: 'Failed to upload photo' });
     }
-    
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(and(
-        eq(orders.id, req.params.id),
-        eq(orders.organizationId, req.organization!.id)
-      ));
-    
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-    
-    const [attachment] = await db
-      .insert(attachments)
-      .values({
-        orderId: order.id,
-        type: type || 'PHOTO',
-        uri,
-      })
-      .returning();
-    
-    res.json(attachment);
   });
   
   app.delete('/api/attachments/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
-    await db.delete(attachments).where(eq(attachments.id, req.params.id));
-    res.json({ success: true });
+    try {
+      const [attachment] = await db.select().from(attachments).where(eq(attachments.id, req.params.id));
+      if (!attachment) {
+        return res.status(404).json({ error: 'Attachment not found' });
+      }
+
+      const isOwner = attachment.uploadedByUserId === req.user!.id;
+      const isManagerOrOwner = req.user!.role === 'OWNER' || req.user!.role === 'MANAGER';
+      if (!isOwner && !isManagerOrOwner) {
+        return res.status(403).json({ error: 'Only the uploader or managers can delete photos' });
+      }
+
+      if (attachment.uri.startsWith('/uploads/') || attachment.uri.startsWith('/api/uploads/')) {
+        const filename = attachment.uri.replace('/api/uploads/', '').replace('/uploads/', '');
+        const filePath = path.join(process.cwd(), 'uploads', filename);
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        } catch (e) {
+          console.error('Failed to delete file:', e);
+        }
+      }
+
+      await db.delete(attachments).where(eq(attachments.id, req.params.id));
+      res.json({ success: true });
+      broadcastToOrg(req.organization!.id, 'attachment_deleted');
+    } catch (error: any) {
+      console.error('Attachment delete error:', error);
+      res.status(500).json({ error: 'Failed to delete photo' });
+    }
   });
 
   app.get('/api/orders/:id/assistants', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -577,6 +730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     await db.delete(orderAssistants).where(eq(orderAssistants.id, req.params.assistantId));
     res.json({ success: true });
+    broadcastToOrg(req.organization!.id, 'order_updated');
   });
 
   // Order expenses API - all employees can add expenses
@@ -973,6 +1127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .returning();
       
       res.json(updated);
+      broadcastToOrg(req.organization!.id, 'order_updated');
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -1029,6 +1184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json({ assigned: results.length, orders: results });
+      broadcastToOrg(req.organization!.id, 'order_updated');
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -1151,6 +1307,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const totalRevenueAsManager = deliveredOrders.filter(o => o.managerId === userId).reduce((s, o) => s + o.amount, 0);
     
     const canceledByUser = userHistory.filter(h => h.toStatus === 'CANCELED').length;
+
+    const managerDeliveredOrders = deliveredOrders.filter(o => o.managerId === userId);
+    
+    const revenueToday = managerDeliveredOrders.filter(o => o.updatedAt >= todayStart.getTime()).reduce((s, o) => s + o.amount, 0);
+    const revenueWeek = managerDeliveredOrders.filter(o => o.updatedAt >= weekAgo).reduce((s, o) => s + o.amount, 0);
+    const revenueMonth = managerDeliveredOrders.filter(o => o.updatedAt >= monthAgo).reduce((s, o) => s + o.amount, 0);
+    
+    const canceledToday = userHistory.filter(h => h.toStatus === 'CANCELED' && h.changedAt >= todayStart.getTime()).length;
+    const canceledWeek = userHistory.filter(h => h.toStatus === 'CANCELED' && h.changedAt >= weekAgo).length;
+    const canceledMonth = userHistory.filter(h => h.toStatus === 'CANCELED' && h.changedAt >= monthAgo).length;
     
     res.json({
       ordersCreated,
@@ -1165,16 +1331,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ordersCreated: ordersCreatedToday,
         ordersAssembled: ordersAssembledToday,
         ordersDelivered: ordersDeliveredToday,
+        revenue: revenueToday,
+        canceled: canceledToday,
       },
       week: {
         ordersCreated: ordersCreatedWeek,
         ordersAssembled: ordersAssembledWeek,
         ordersDelivered: ordersDeliveredWeek,
+        revenue: revenueWeek,
+        canceled: canceledWeek,
       },
       month: {
         ordersCreated: ordersCreatedMonth,
         ordersAssembled: ordersAssembledMonth,
         ordersDelivered: ordersDeliveredMonth,
+        revenue: revenueMonth,
+        canceled: canceledMonth,
       },
       totalRevenueAsManager,
       canceledByUser,
@@ -1186,6 +1358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const requestingUser = req.user!;
     const userId = req.params.userId;
     const type = req.query.type as string;
+    const periodParam = req.query.period as string | undefined;
     
     if (requestingUser.role !== 'OWNER' && requestingUser.role !== 'MANAGER' && requestingUser.id !== userId) {
       return res.status(403).json({ error: 'Access denied' });
@@ -1194,6 +1367,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const validTypes = ['created', 'assembled', 'delivered', 'canceled', 'assigned_florist', 'assigned_courier', 'active_florist', 'active_courier'];
     if (!type || !validTypes.includes(type)) {
       return res.status(400).json({ error: 'Invalid type parameter. Must be one of: ' + validTypes.join(', ') });
+    }
+    
+    let periodStart: number | null = null;
+    if (periodParam) {
+      const now = Date.now();
+      if (periodParam === 'today') {
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+        periodStart = todayStart.getTime();
+      } else if (periodParam === 'week') {
+        periodStart = now - 7 * 24 * 60 * 60 * 1000;
+      } else if (periodParam === 'month') {
+        periodStart = now - 30 * 24 * 60 * 60 * 1000;
+      }
     }
     
     const targetUser = await db.select().from(users).where(eq(users.id, userId)).then(r => r[0]);
@@ -1210,7 +1396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (type === 'created') {
       result = allOrders
-        .filter(o => o.managerId === userId)
+        .filter(o => o.managerId === userId && (!periodStart || o.createdAt >= periodStart))
         .sort((a, b) => b.createdAt - a.createdAt)
         .map(o => ({
           ...o,
@@ -1237,13 +1423,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .sort((a, b) => a.deliveryDateTime - b.deliveryDateTime)
         .map(o => ({ ...o, actionTimestamp: o.updatedAt }));
     } else {
+      const historyConditions = [
+        eq(orderHistory.changedByUserId, userId),
+        eq(orderHistory.toStatus, type.toUpperCase() as any),
+      ];
+      if (periodStart) {
+        historyConditions.push(gte(orderHistory.changedAt, periodStart) as any);
+      }
       const userHistory = await db
         .select()
         .from(orderHistory)
-        .where(and(
-          eq(orderHistory.changedByUserId, userId),
-          eq(orderHistory.toStatus, type.toUpperCase() as any)
-        ));
+        .where(and(...historyConditions));
       
       const orderIds = userHistory.map(h => h.orderId);
       const relevantOrders = allOrders.filter(o => orderIds.includes(o.id));
@@ -1954,6 +2144,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ========== COURIER TRACKING ENDPOINTS ==========
 
+  // GET /api/courier/my-orders - get courier's assigned orders with coordinates for map
+  app.get('/api/courier/my-orders', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.role !== 'COURIER') {
+        return res.status(403).json({ error: 'Доступно только курьерам' });
+      }
+
+      const orgId = req.user!.organizationId;
+      const courierId = req.user!.id;
+
+      const result = await db.select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        clientName: orders.clientName,
+        address: orders.address,
+        status: orders.status,
+        latitude: orders.latitude,
+        longitude: orders.longitude,
+        deliveryDateTime: orders.deliveryDateTime,
+        amount: orders.amount,
+        comment: orders.comment,
+      }).from(orders)
+        .where(and(
+          eq(orders.organizationId, orgId),
+          eq(orders.courierId, courierId),
+          inArray(orders.status, ['NEW', 'IN_WORK', 'ASSEMBLED', 'ON_DELIVERY']),
+        ))
+        .orderBy(orders.deliveryDateTime);
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // POST /api/courier/location - courier sends their location (every 60s when ON_DELIVERY)
   app.post('/api/courier/location', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
@@ -2594,6 +2819,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
       var sc = couriers.find(function(c) { return c.courierUserId === selectedCourier; });
       if (sc) {
         map.setView([sc.lat, sc.lon], 14, { animate: true });
+      }
+    }
+  }
+
+  document.addEventListener('message', function(e) {
+    try { var data = JSON.parse(e.data); if (data.type === 'updateData') updateData(data); } catch(err) {}
+  });
+  window.addEventListener('message', function(e) {
+    try { var data = JSON.parse(e.data); if (data.type === 'updateData') updateData(data); } catch(err) {}
+  });
+</script>
+</body>
+</html>`);
+  });
+
+  app.get('/api/courier-map-page', (_req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin="anonymous"></script>
+<style>
+  * { margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #e8e8e8; }
+  #map { width: 100%; height: 100%; }
+  .order-marker {
+    width: 32px; height: 32px; border-radius: 50%; border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35); display: flex; align-items: center;
+    justify-content: center; font-size: 12px; color: #fff; font-weight: bold; cursor: pointer;
+  }
+  .courier-pos {
+    width: 18px; height: 18px; border-radius: 50%; background: #4CAF50;
+    border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .courier-pos-ring {
+    width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(76,175,80,0.3);
+    background: rgba(76,175,80,0.08); display: flex; align-items: center; justify-content: center;
+  }
+  .popup-content { font-family: -apple-system, sans-serif; font-size: 13px; line-height: 1.5; min-width: 180px; }
+  .popup-content .name { font-weight: 600; font-size: 15px; margin-bottom: 4px; color: #1a1a1a; }
+  .popup-content .address { margin-top: 4px; color: #444; font-size: 12px; }
+  .popup-content .time { color: #999; font-size: 11px; margin-top: 2px; }
+  .popup-content .status { display: inline-block; padding: 2px 8px; border-radius: 4px; color: #fff; font-size: 11px; font-weight: 500; }
+  .popup-content .nav-btn { display: inline-block; padding: 6px 12px; background: #3B82F6; color: #fff; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin-top: 8px; }
+  .route-label { background: none; border: none; font-size: 12px; font-weight: 600; color: #FF5722; text-shadow: 0 0 4px #fff, 0 0 4px #fff; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  function sendMsg(data) {
+    var str = JSON.stringify(data);
+    if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+      window.ReactNativeWebView.postMessage(str);
+    } else if (window.parent !== window) {
+      window.parent.postMessage(str, '*');
+    }
+  }
+
+  var map = L.map('map', { zoomControl: true }).setView([55.75, 37.62], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OSM', maxZoom: 19
+  }).addTo(map);
+
+  var markersLayer = L.layerGroup().addTo(map);
+  var routeLayer = L.layerGroup().addTo(map);
+  var courierMarker = null;
+  var firstLoad = true;
+
+  var statusColors = {
+    NEW: '#2196F3', IN_WORK: '#FF9800', ASSEMBLED: '#9C27B0',
+    ON_DELIVERY: '#FF5722', DELIVERED: '#4CAF50', CANCELED: '#757575'
+  };
+  var statusLabels = {
+    NEW: 'Новый', IN_WORK: 'В работе', ASSEMBLED: 'Собран',
+    ON_DELIVERY: 'Доставка', DELIVERED: 'Доставлен', CANCELED: 'Отменен'
+  };
+
+  function updateData(data) {
+    var orders = data.orders || [];
+    var myLat = data.myLat;
+    var myLon = data.myLon;
+
+    markersLayer.clearLayers();
+    routeLayer.clearLayers();
+
+    if (myLat && myLon) {
+      var posIcon = L.divIcon({
+        className: '',
+        html: '<div class="courier-pos-ring"><div class="courier-pos"></div></div>',
+        iconSize: [36, 36], iconAnchor: [18, 18]
+      });
+      courierMarker = L.marker([myLat, myLon], { icon: posIcon, zIndexOffset: 1000 }).addTo(markersLayer);
+      courierMarker.bindPopup('<div class="popup-content"><div class="name">Моя позиция</div></div>');
+    }
+
+    orders.forEach(function(o, idx) {
+      if (!o.latitude || !o.longitude) return;
+      var color = statusColors[o.status] || '#999';
+      var num = o.orderNumber ? o.orderNumber : (idx + 1);
+      var icon = L.divIcon({
+        className: '',
+        html: '<div class="order-marker" style="background:' + color + '">' + num + '</div>',
+        iconSize: [32, 32], iconAnchor: [16, 16],
+      });
+      var marker = L.marker([o.latitude, o.longitude], { icon: icon }).addTo(markersLayer);
+      var statusHtml = '<span class="status" style="background:' + color + '">' + (statusLabels[o.status] || o.status) + '</span>';
+      var dateStr = '';
+      if (o.deliveryDateTime) {
+        try {
+          var d = new Date(parseInt(o.deliveryDateTime));
+          dateStr = '<div class="time">' + d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'}) + '</div>';
+        } catch(e) {}
+      }
+      var orderNum = o.orderNumber ? '#' + o.orderNumber + ' - ' : '';
+      var navUrl = 'https://yandex.ru/maps/?pt=' + o.longitude + ',' + o.latitude + '&z=16&text=' + encodeURIComponent(o.address || '');
+      var navBtn = '<a href="' + navUrl + '" target="_blank" class="nav-btn">Навигация</a>';
+      var openBtn = ' <a href="#" onclick="sendMsg({type:\\'openOrder\\',orderId:\\'' + o.id + '\\'});return false;" class="nav-btn" style="background:#4CAF7A;">Открыть</a>';
+      marker.bindPopup('<div class="popup-content"><div class="name">' + orderNum + (o.clientName || '') + '</div>' + statusHtml + '<div class="address">' + (o.address || '') + '</div>' + dateStr + '<div>' + navBtn + openBtn + '</div></div>');
+
+      if (myLat && myLon) {
+        L.polyline([[myLat, myLon], [o.latitude, o.longitude]], {
+          color: color, weight: 2, opacity: 0.5, dashArray: '6, 4'
+        }).addTo(routeLayer);
+      }
+    });
+
+    if (firstLoad) {
+      firstLoad = false;
+      var allPoints = [];
+      if (myLat && myLon) allPoints.push([myLat, myLon]);
+      orders.forEach(function(o) { if (o.latitude && o.longitude) allPoints.push([o.latitude, o.longitude]); });
+      if (allPoints.length > 1) {
+        map.fitBounds(L.latLngBounds(allPoints).pad(0.15));
+      } else if (allPoints.length === 1) {
+        map.setView(allPoints[0], 14);
       }
     }
   }

@@ -47,32 +47,65 @@ export default function AvailableOrdersScreen() {
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
   const webBottomInset = Platform.OS === 'web' ? 34 : 0;
 
-  const availableOrders = useMemo(() => {
-    if (isFlorist) {
-      return orders
-        .filter(o => o.status === 'NEW' && !o.floristId)
-        .sort((a, b) => a.deliveryDateTime - b.deliveryDateTime);
+  const [availableOrders, setAvailableOrders] = useState<Order[]>([]);
+  const [availableLoading, setAvailableLoading] = useState(true);
+
+  const loadAvailable = useCallback(async () => {
+    try {
+      const data = await api.orders.listAvailable();
+      setAvailableOrders(data.sort((a: Order, b: Order) => a.deliveryDateTime - b.deliveryDateTime));
+    } catch (error) {
+      console.error('Error loading available orders:', error);
     }
-    if (isCourier) {
-      return orders
-        .filter(o => o.status === 'ASSEMBLED' && !o.courierId)
-        .sort((a, b) => a.deliveryDateTime - b.deliveryDateTime);
-    }
-    return [];
-  }, [orders, isFlorist, isCourier]);
+    setAvailableLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadAvailable();
+    let eventSource: EventSource | null = null;
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+    const connectSSE = async () => {
+      try {
+        const { getToken } = require('@/lib/api');
+        const { getApiUrl } = require('@/lib/query-client');
+        const token = await getToken();
+        if (!token || typeof EventSource === 'undefined') {
+          fallbackInterval = setInterval(loadAvailable, 5000);
+          return;
+        }
+        const url = new URL('/api/events', getApiUrl());
+        url.searchParams.set('token', token);
+        eventSource = new EventSource(url.toString());
+        eventSource.onmessage = () => loadAvailable();
+        eventSource.onerror = () => {
+          eventSource?.close();
+          eventSource = null;
+          if (!fallbackInterval) fallbackInterval = setInterval(loadAvailable, 10000);
+          setTimeout(connectSSE, 5000);
+        };
+      } catch {
+        fallbackInterval = setInterval(loadAvailable, 5000);
+      }
+    };
+    connectSSE();
+    return () => {
+      eventSource?.close();
+      if (fallbackInterval) clearInterval(fallbackInterval);
+    };
+  }, [loadAvailable]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refreshOrders();
+    await Promise.all([refreshOrders(), loadAvailable()]);
     setRefreshing(false);
-  }, [refreshOrders]);
+  }, [refreshOrders, loadAvailable]);
 
   const handleAssignSelf = useCallback(async (orderId: string) => {
     try {
       setAssigningId(orderId);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await api.orders.assignSelf(orderId);
-      await refreshOrders();
+      await Promise.all([refreshOrders(), loadAvailable()]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Готово', isFlorist ? 'Заказ взят в работу' : 'Заказ взят на доставку');
     } catch (error: any) {
@@ -101,7 +134,7 @@ export default function AvailableOrdersScreen() {
       setBatchAssigning(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const result = await api.orders.batchAssign(Array.from(selectedIds));
-      await refreshOrders();
+      await Promise.all([refreshOrders(), loadAvailable()]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Готово', `Назначено заказов: ${result.assigned}`);
       setSelectedIds(new Set());

@@ -57,6 +57,7 @@ export interface Attachment {
   orderId: string;
   type: string;
   uri: string;
+  uploadedByUserId?: string | null;
   createdAt: number;
 }
 

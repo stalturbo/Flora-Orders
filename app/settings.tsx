@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { useTheme } from '@/context/ThemeContext';
+import { EmployeeStatsModal } from '@/components/EmployeeStatsModal';
 import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
@@ -18,6 +19,7 @@ export default function SettingsScreen() {
   const { colors, themeMode, setThemeMode } = useTheme();
   const [myStats, setMyStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [showStatsModal, setShowStatsModal] = useState(false);
 
   const loadMyStats = useCallback(async () => {
     if (!currentUser) return;
@@ -97,7 +99,7 @@ export default function SettingsScreen() {
                 <ActivityIndicator size="small" color={colors.primary} />
               </View>
             ) : myStats ? (
-              <View style={styles.myStatsContent}>
+              <Pressable style={styles.myStatsContent} onPress={() => { setShowStatsModal(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
                 <View style={styles.myStatsRow}>
                   {(currentUser?.role === 'MANAGER' || currentUser?.role === 'OWNER') && (
                     <View style={styles.myStatItem}>
@@ -146,7 +148,11 @@ export default function SettingsScreen() {
                     )}
                   </View>
                 </View>
-              </View>
+                <View style={styles.myStatsHint}>
+                  <Text style={styles.myStatsHintText}>Нажмите для подробностей</Text>
+                  <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+                </View>
+              </Pressable>
             ) : null}
           </View>
         </View>
@@ -185,10 +191,16 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>FloraOrders v1.0.0</Text>
+          <Text style={styles.footerText}>FloraOrders v1.1.0</Text>
           <Text style={styles.footerText}>Система управления заказами</Text>
         </View>
       </View>
+
+      <EmployeeStatsModal
+        visible={showStatsModal}
+        user={currentUser as any}
+        onClose={() => setShowStatsModal(false)}
+      />
     </ScrollView>
   );
 }
@@ -357,5 +369,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
     color: colors.text,
+  },
+  myStatsHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  myStatsHintText: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    color: colors.primary,
   },
 });

@@ -200,13 +200,6 @@ export default function LoginScreen() {
         <Ionicons name={getThemeIcon()} size={22} color={colors.textSecondary} />
       </Pressable>
 
-      <Pressable 
-        style={[styles.devButton, { top: insets.top + webTopInset + 16 }]}
-        onPress={() => router.push('/dev-panel')}
-      >
-        <Ionicons name="code-slash" size={18} color={colors.textSecondary} />
-      </Pressable>
-
       <ScrollView 
         contentContainerStyle={[
           styles.scrollContent,
@@ -385,20 +378,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  devButton: {
-    position: 'absolute',
-    right: 68,
-    zIndex: 10,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    opacity: 0.7,
   },
   backButton: {
     marginBottom: 24,

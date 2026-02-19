@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Platform, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Platform, Pressable, Dimensions, Image, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -18,7 +19,7 @@ const isDesktop = width > 768;
 export default function CreateOrderScreen() {
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuth();
-  const { users, createOrder } = useData();
+  const { users, createOrder, addAttachment } = useData();
   const { colors } = useTheme();
   
   const [clientName, setClientName] = useState('');
@@ -50,6 +51,57 @@ export default function CreateOrderScreen() {
   const [clarifyWithRecipient, setClarifyWithRecipient] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pendingPhotos, setPendingPhotos] = useState<{uri: string; base64: string; mimeType: string}[]>([]);
+
+  interface PendingPhoto { uri: string; base64: string; mimeType: string; }
+
+  const handlePickPhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.7,
+      base64: Platform.OS !== 'web' ? true : undefined,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const asset = result.assets[0];
+      try {
+        let base64Data: string;
+        if (Platform.OS === 'web') {
+          const response = await fetch(asset.uri);
+          const blob = await response.blob();
+          base64Data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const dataUrl = reader.result as string;
+              resolve(dataUrl.split(',')[1]);
+            };
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsDataURL(blob);
+          });
+        } else {
+          if (asset.base64) {
+            base64Data = asset.base64;
+          } else {
+            const FileSystem = require('expo-file-system');
+            base64Data = await FileSystem.readAsStringAsync(asset.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+          }
+        }
+        const mimeType = asset.mimeType || 'image/jpeg';
+        setPendingPhotos(prev => [...prev, { uri: asset.uri, base64: base64Data, mimeType }]);
+      } catch (error) {
+        console.error('Photo pick error:', error);
+        Alert.alert('Ошибка', 'Не удалось выбрать фото');
+      }
+    }
+  };
+
+  const handleRemovePendingPhoto = (index: number) => {
+    setPendingPhotos(prev => prev.filter((_, i) => i !== index));
+  };
 
   const florists = users.filter(u => u.role === 'FLORIST');
   const couriers = users.filter(u => u.role === 'COURIER');
@@ -180,6 +232,16 @@ export default function CreateOrderScreen() {
         );
       }
       return;
+    }
+
+    if (result.success && result.orderId && pendingPhotos.length > 0) {
+      for (const photo of pendingPhotos) {
+        try {
+          await addAttachment(result.orderId, photo.base64, photo.mimeType);
+        } catch (e) {
+          console.error('Failed to upload photo during creation:', e);
+        }
+      }
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -615,6 +677,27 @@ export default function CreateOrderScreen() {
           </View>
         )}
 
+        <Text style={styles.sectionTitle}>Фото</Text>
+        <View style={styles.photoSection}>
+          <View style={styles.photoGrid}>
+            {pendingPhotos.map((photo, index) => (
+              <View key={index} style={styles.photoContainer}>
+                <Image source={{ uri: photo.uri }} style={styles.photo} />
+                <Pressable
+                  style={styles.photoDeleteButton}
+                  onPress={() => handleRemovePendingPhoto(index)}
+                >
+                  <Ionicons name="close-circle" size={22} color="#fff" />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+          <Pressable style={styles.addPhotoButton} onPress={handlePickPhoto}>
+            <Ionicons name="camera-outline" size={20} color={colors.primary} />
+            <Text style={[styles.addPhotoText, { color: colors.primary }]}>Добавить фото</Text>
+          </Pressable>
+        </View>
+
         <View style={{ marginTop: 24 }}>
           <Button
             title="Создать заказ"
@@ -747,5 +830,48 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   quickTimeTextActive: {
     color: '#fff',
+  },
+  photoSection: {
+    marginBottom: 16,
+  },
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  photoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  photo: {
+    width: '100%',
+    height: '100%',
+  },
+  photoDeleteButton: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 11,
+  },
+  addPhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+  },
+  addPhotoText: {
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
   },
 });

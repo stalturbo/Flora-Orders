@@ -549,7 +549,14 @@ export default function FinancialReportsScreen() {
               <Text style={styles.sectionTitle}>Бизнес-расходы по категориям</Text>
               <View style={styles.breakdownCard}>
                 {Object.entries(report.bizExpensesByCategory).map(([category, amount]) => (
-                  <View key={category} style={styles.breakdownRow}>
+                  <Pressable
+                    key={category}
+                    style={styles.breakdownRow}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      router.push('/expenses');
+                    }}
+                  >
                     <View style={styles.breakdownLabelRow}>
                       <Ionicons
                         name={CATEGORY_ICONS[category] as any || 'help-outline'}
@@ -560,10 +567,13 @@ export default function FinancialReportsScreen() {
                         {BUSINESS_EXPENSE_CATEGORY_LABELS[category as keyof typeof BUSINESS_EXPENSE_CATEGORY_LABELS] || category}
                       </Text>
                     </View>
-                    <Text style={[styles.breakdownValue, { color: colors.error }]}>
-                      -{formatAmountFull(amount)}
-                    </Text>
-                  </View>
+                    <View style={styles.breakdownRight}>
+                      <Text style={[styles.breakdownValue, { color: colors.error }]}>
+                        -{formatAmountFull(amount)}
+                      </Text>
+                      <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                    </View>
+                  </Pressable>
                 ))}
                 <View style={[styles.breakdownRow, styles.totalRow]}>
                   <Text style={[styles.breakdownLabel, { fontFamily: 'Inter_600SemiBold' }]}>Итого расходов</Text>
@@ -579,12 +589,18 @@ export default function FinancialReportsScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Расходы на заказы</Text>
               <View style={styles.breakdownCard}>
-                <View style={styles.breakdownRow}>
+                <Pressable
+                  style={styles.breakdownRow}
+                  onPress={() => handleDrilldown('Заказы с расходами', {})}
+                >
                   <Text style={styles.breakdownLabel}>Расходы по заказам</Text>
-                  <Text style={[styles.breakdownValue, { color: colors.error }]}>
-                    -{formatAmountFull(report.totalOrderExpenses)}
-                  </Text>
-                </View>
+                  <View style={styles.breakdownRight}>
+                    <Text style={[styles.breakdownValue, { color: colors.error }]}>
+                      -{formatAmountFull(report.totalOrderExpenses)}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                  </View>
+                </Pressable>
               </View>
             </View>
           )}

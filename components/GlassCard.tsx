@@ -1,69 +1,43 @@
-import React from "react";
-import { Platform, StyleSheet, View, ViewStyle } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
-import { useTheme } from "@/context/ThemeContext";
+import React from 'react';
+import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
+import { radius } from '@/lib/tokens';
 
-type Props = {
+interface GlassCardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
   padding?: number;
-};
+  style?: StyleProp<ViewStyle>;
+}
 
-export function GlassCard({ children, style, padding = 16 }: Props) {
-  const { colors } = useTheme();
-  const r = colors.tokens.radius.md;
-
-  const content = (
-    <View style={[styles.inner, { padding }, { borderRadius: r }]}>
-      {children}
-    </View>
-  );
-
-  // Blur норм на iOS/Android, на web иногда выглядит странно — fallback на градиент.
-  const useBlur = Platform.OS !== "web";
+export function GlassCard({ children, padding = 16, style }: GlassCardProps) {
+  const { colors, isDark } = useTheme();
 
   return (
     <View
       style={[
-        styles.wrap,
+        styles.card,
         {
-          borderRadius: r,
-          borderColor: colors.border,
-          shadowColor: colors.shadow,
+          backgroundColor: isDark ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.82)',
+          borderColor: colors.borderLight,
+          shadowColor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.06)',
+          padding,
         },
         style,
       ]}
     >
-      <LinearGradient
-        colors={[colors.cardGradientStart, colors.cardGradientEnd]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[StyleSheet.absoluteFill, { borderRadius: r }]}
-      />
-      {useBlur ? (
-        <BlurView
-          intensity={18}
-          tint={"default"}
-          style={[StyleSheet.absoluteFill, { borderRadius: r }]}
-        />
-      ) : null}
-      {content}
+      {children}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
+  card: {
+    borderRadius: radius.lg - 2,
     borderWidth: 1,
-    overflow: "hidden",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    elevation: 4,
-    backgroundColor: "transparent",
-  },
-  inner: {
-    backgroundColor: "transparent",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 3,
+    overflow: 'hidden',
   },
 });

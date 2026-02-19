@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { OrderStatus, ORDER_STATUS_LABELS } from '@/lib/types';
 import { useTheme } from '@/context/ThemeContext';
+import { spacing, radius, fontSize } from '@/lib/tokens';
 import * as Haptics from 'expo-haptics';
 
 interface StatusFilterProps {
@@ -12,7 +13,7 @@ interface StatusFilterProps {
 
 export function StatusFilter({ selectedStatus, onSelect, counts }: StatusFilterProps) {
   const { colors } = useTheme();
-  
+
   const statusColors: Record<OrderStatus | 'ALL', string> = {
     ALL: colors.primary,
     NEW: colors.statusNew,
@@ -22,19 +23,19 @@ export function StatusFilter({ selectedStatus, onSelect, counts }: StatusFilterP
     DELIVERED: colors.statusDelivered,
     CANCELED: colors.statusCanceled,
   };
-  
+
   const statuses: (OrderStatus | 'ALL')[] = [
-    'ALL', 'NEW', 'IN_WORK', 'ASSEMBLED', 'ON_DELIVERY', 'DELIVERED', 'CANCELED'
+    'ALL', 'NEW', 'IN_WORK', 'ASSEMBLED', 'ON_DELIVERY', 'DELIVERED', 'CANCELED',
   ];
-  
+
   const labels: Record<OrderStatus | 'ALL', string> = {
     ALL: 'Все',
     ...ORDER_STATUS_LABELS,
   };
-  
+
   return (
-    <ScrollView 
-      horizontal 
+    <ScrollView
+      horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
@@ -42,15 +43,15 @@ export function StatusFilter({ selectedStatus, onSelect, counts }: StatusFilterP
         const isSelected = selectedStatus === status;
         const color = statusColors[status];
         const count = counts?.[status];
-        
+
         return (
           <Pressable
             key={status}
             style={[
               styles.chip,
-              isSelected 
-                ? { backgroundColor: color } 
-                : { backgroundColor: color + '15' }
+              isSelected
+                ? { backgroundColor: color }
+                : { backgroundColor: color + '12' },
             ]}
             onPress={() => {
               Haptics.selectionAsync();
@@ -59,7 +60,7 @@ export function StatusFilter({ selectedStatus, onSelect, counts }: StatusFilterP
           >
             <Text style={[
               styles.chipText,
-              { color: isSelected ? '#fff' : color }
+              { color: isSelected ? '#fff' : color },
             ]}>
               {labels[status]}
               {count !== undefined ? ` (${count})` : ''}
@@ -73,18 +74,18 @@ export function StatusFilter({ selectedStatus, onSelect, counts }: StatusFilterP
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     gap: 8,
   },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    marginRight: spacing.xs,
   },
   chipText: {
-    fontSize: 13,
+    fontSize: fontSize.secondary,
     fontFamily: 'Inter_600SemiBold',
   },
 });

@@ -1,0 +1,71 @@
+Вот и проблема. Фотографии сохраняются как локальный URI с устройства (file:///...). Это значит:
+
+Фото видно только на том устройстве, которое его загрузило — на другом аккаунте/устройстве этот путь не существует
+На iPhone URI форматы отличаются и могут не работать
+Нужно реально загружать файлы фотографий на сервер и раздавать их через API. Это серьёзная доработка.
+
+$ ls -la /home/runner/workspace/uploads 2>/dev/null || echo "no uploads dir"
+Optimized Agent memory
+Now let me read the relevant parts of the server and frontend to make all changes:
+
+Now I have the full picture. Let me implement the server-side photo upload system. I'll:
+
+Create an uploads/ directory on server
+Accept base64 photo data in the attachment endpoint
+Save photos to disk and serve them via API
+Update the frontend to read and send base64 data, and display from server URLs
+Now I have full context. Let me implement the solution. I need to:
+
+Increase JSON body size limit (for base64 images)
+Add server upload endpoint that saves base64 to files
+Add server endpoint to serve uploaded files
+Update frontend to read file and send base64
+Update photo display to use server URLs
+Now update the server routes - replace the attachment upload endpoint and add a photo serving endpoint:
+
+Now replace the attachment upload endpoint with base64 file upload:
+
+Good, the LSP errors in routes.ts cleared. Now update the frontend. First the API layer:
+
+Now update the DataContext:
+
+Now update the order detail page to read file as base64 and send to server. Also need to update the photo display to use server URLs:
+
+Now update the handleAddPhoto function and add the necessary import:
+
+Now update the handleAddPhoto function to read file as base64 and upload:
+
+Now I need to update how photos are displayed. The URIs stored in the DB will now be relative paths like /api/uploads/xxx.jpg. I need to convert them to full URLs when displaying. Let me find where photos are displayed:
+
+I need to create a helper function to build full photo URLs. The URI stored is now /api/uploads/xxx.jpg and needs the base URL prepended for mobile (web can use relative paths). Let me add a helper and update photo display:
+
+Now I need to add a helper function to resolve photo URIs to full URLs. Let me add it and update the photo display:
+
+Now add the helper function and update photo display. I need to resolve photo URIs - old ones might be local file:// URIs, new ones will be /api/uploads/xxx:
+
+Now update the photo display code to use the getPhotoUrl helper:
+
+Now I also need to add an uploading indicator to the photo section. Let me find that area:
+
+Now update the add photo button to show uploading state:
+
+Now update the delete endpoint to also clean up the file on disk:
+
+Good, LSP errors cleared (only 1 remaining in DataContext which was there before). Let me restart the backend:
+
+Now build for production:
+
+Both builds succeeded. Now package and upload:
+
+Готово! Вот что было сделано:
+
+Проблема: Фотографии сохранялись как локальные ссылки с устройства — другие аккаунты и устройства не могли их увидеть.
+
+Решение:
+
+Фотографии теперь реально загружаются на сервер — файл читается с устройства, кодируется и отправляется на сервер
+Сервер сохраняет файлы в папку uploads/ и раздаёт их через API
+Фото доступны всем пользователям организации с любого устройства
+Поддержка iPhone (используется expo-file-system для чтения файлов)
+При удалении фото файл удаляется и с диска тоже
+Индикатор загрузки при добавлении фото

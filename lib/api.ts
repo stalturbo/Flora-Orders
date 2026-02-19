@@ -2,6 +2,30 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiUrl } from './query-client';
 import { Order } from './types';
 
+export function resolvePhotoUri(uri: string): string {
+  if (!uri) return '';
+  if (uri.startsWith('file://') || uri.startsWith('content://')) {
+    return '';
+  }
+  if (uri.startsWith('/api/uploads/') || uri.startsWith('/uploads/')) {
+    try {
+      const base = getApiUrl().replace(/\/$/, '');
+      return `${base}${uri}`;
+    } catch {
+      return uri;
+    }
+  }
+  if (uri.startsWith('http://') || uri.startsWith('https://') || uri.startsWith('data:')) {
+    return uri;
+  }
+  try {
+    const base = getApiUrl().replace(/\/$/, '');
+    return `${base}${uri.startsWith('/') ? uri : '/' + uri}`;
+  } catch {
+    return uri;
+  }
+}
+
 const TOKEN_KEY = '@flora_auth_token';
 
 export async function getToken(): Promise<string | null> {
@@ -142,10 +166,10 @@ export const api = {
     delete: (id: string) =>
       request<{ success: boolean }>(`/api/orders/${id}`, { method: 'DELETE' }),
     
-    addAttachment: (orderId: string, uri: string) =>
+    addAttachment: (orderId: string, base64: string, mimeType: string, type: string = 'PHOTO') =>
       request<any>(`/api/orders/${orderId}/attachments`, {
         method: 'POST',
-        body: JSON.stringify({ uri, type: 'PHOTO' }),
+        body: JSON.stringify({ base64, type, mimeType }),
       }),
     
     assignSelf: (orderId: string) =>
@@ -158,6 +182,9 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ orderIds }),
       }),
+
+    listAvailable: () =>
+      request<Order[]>('/api/orders/available'),
   },
   
   attachments: {
@@ -204,8 +231,11 @@ export const api = {
       role: string;
     }>(`/api/stats/employee/${userId}`),
 
-    employeeOrders: (userId: string, type: 'created' | 'assembled' | 'delivered' | 'canceled' | 'assigned_florist' | 'assigned_courier' | 'active_florist' | 'active_courier') =>
-      request<(Order & { actionTimestamp: number })[]>(`/api/stats/employee/${userId}/orders?type=${type}`),
+    employeeOrders: (userId: string, type: 'created' | 'assembled' | 'delivered' | 'canceled' | 'assigned_florist' | 'assigned_courier' | 'active_florist' | 'active_courier', period?: 'today' | 'week' | 'month') => {
+      const params = new URLSearchParams({ type });
+      if (period) params.set('period', period);
+      return request<(Order & { actionTimestamp: number })[]>(`/api/stats/employee/${userId}/orders?${params.toString()}`);
+    },
   },
 
   expenses: {
