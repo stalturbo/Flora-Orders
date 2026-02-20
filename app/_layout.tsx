@@ -25,7 +25,7 @@ function BackButton({ tintColor }: { tintColor: string }) {
   }, []);
 
   return (
-    <Pressable onPress={handleBack} style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8, paddingRight: 8, paddingVertical: 8 }}>
+    <Pressable onPress={handleBack} style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8, paddingRight: 8, paddingVertical: 8 }}>
       <Ionicons name="chevron-back" size={24} color={tintColor} />
     </Pressable>
   );

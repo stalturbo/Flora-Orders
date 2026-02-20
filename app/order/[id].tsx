@@ -344,6 +344,13 @@ export default function OrderDetailScreen() {
         {
           text: 'Галерея',
           onPress: async () => {
+            if (Platform.OS !== 'web') {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Нет доступа', 'Разрешите доступ к галерее в настройках устройства');
+                return;
+              }
+            }
             const result = await ImagePicker.launchImageLibraryAsync({
               mediaTypes: ['images'],
               allowsEditing: false,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Platform, Pressable, Dimensions, Image, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,10 +52,19 @@ export default function CreateOrderScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pendingPhotos, setPendingPhotos] = useState<{uri: string; base64: string; mimeType: string}[]>([]);
+  const scrollRef = useRef<ScrollView>(null);
 
   interface PendingPhoto { uri: string; base64: string; mimeType: string; }
 
   const handlePickPhoto = async () => {
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Нет доступа', 'Разрешите доступ к галерее в настройках устройства');
+        return;
+      }
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -151,6 +160,7 @@ export default function CreateOrderScreen() {
   const handleSubmit = async () => {
     if (!validate()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
 
@@ -234,7 +244,14 @@ export default function CreateOrderScreen() {
       return;
     }
 
-    if (result.success && result.orderId && pendingPhotos.length > 0) {
+    if (!result.success) {
+      setIsSubmitting(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Ошибка', result.error || 'Не удалось создать заказ. Попробуйте ещё раз.');
+      return;
+    }
+
+    if (result.orderId && pendingPhotos.length > 0) {
       for (const photo of pendingPhotos) {
         try {
           await addAttachment(result.orderId, photo.base64, photo.mimeType);
@@ -254,7 +271,8 @@ export default function CreateOrderScreen() {
   const styles = createStyles(colors);
 
   return (
-    <ScrollView 
+    <ScrollView
+      ref={scrollRef}
       style={styles.container}
       contentContainerStyle={[
         { paddingBottom: insets.bottom + webBottomInset + 24 },
@@ -263,6 +281,14 @@ export default function CreateOrderScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={[styles.form, isDesktop && styles.formDesktop]}>
+        {Object.keys(errors).length > 0 && (
+          <View style={styles.errorSummary}>
+            <Ionicons name="alert-circle" size={16} color={colors.error} />
+            <Text style={styles.errorSummaryText}>
+              Исправьте выделенные поля перед сохранением
+            </Text>
+          </View>
+        )}
         <InputField
           label="Имя клиента *"
           value={clientName}
@@ -873,5 +899,22 @@ const createStyles = (colors: any) => StyleSheet.create({
   addPhotoText: {
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
+  },
+  errorSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.error + '18',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.error + '40',
+  },
+  errorSummaryText: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    color: colors.error,
+    flex: 1,
   },
 });
