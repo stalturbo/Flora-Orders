@@ -438,33 +438,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(403).json({ error: 'Only managers can create orders' });
     }
     
-    const { clientName, clientPhone, address, deliveryDateTime, deliveryDateTimeEnd, amount, comment, floristId, courierId, externalFloristName, externalFloristPhone, externalCourierName, externalCourierPhone, paymentStatus, paymentMethod, paymentDetails, clientSource, clientSourceId } = req.body;
-    
+    const { clientName, clientPhone, address, deliveryDateTime, deliveryDateTimeEnd, amount, comment, floristId, courierId, externalFloristName, externalFloristPhone, externalCourierName, externalCourierPhone, paymentStatus, paymentMethod, paymentDetails, clientSource, clientSourceId, force } = req.body;
+
     if (!clientName || !clientPhone || !address || !deliveryDateTime || !amount) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
-    
-    const dayStart = new Date(deliveryDateTime);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(deliveryDateTime);
-    dayEnd.setHours(23, 59, 59, 999);
-    
-    const duplicates = await db
-      .select()
-      .from(orders)
-      .where(and(
-        eq(orders.organizationId, req.organization!.id),
-        eq(orders.clientPhone, clientPhone),
-        eq(orders.amount, amount),
-        gte(orders.deliveryDateTime, dayStart.getTime()),
-        lte(orders.deliveryDateTime, dayEnd.getTime())
-      ));
-    
-    if (duplicates.length > 0) {
-      return res.status(409).json({ 
-        error: 'Possible duplicate order found',
-        duplicates 
-      });
+
+    if (!force) {
+      const dayStart = new Date(deliveryDateTime);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(deliveryDateTime);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const duplicates = await db
+        .select()
+        .from(orders)
+        .where(and(
+          eq(orders.organizationId, req.organization!.id),
+          eq(orders.clientPhone, clientPhone),
+          eq(orders.amount, amount),
+          gte(orders.deliveryDateTime, dayStart.getTime()),
+          lte(orders.deliveryDateTime, dayEnd.getTime())
+        ));
+
+      if (duplicates.length > 0) {
+        return res.status(409).json({
+          error: 'Possible duplicate order found',
+          duplicates
+        });
+      }
     }
     
     const now = Date.now();

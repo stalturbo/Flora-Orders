@@ -181,8 +181,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     clientPhone: string;
     address: string;
     deliveryDateTime: number;
+    deliveryDateTimeEnd?: number | null;
     amount: number;
-    comment?: string;
+    comment?: string | null;
     floristId?: string | null;
     courierId?: string | null;
     externalFloristName?: string | null;
@@ -194,14 +195,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     paymentDetails?: string | null;
     clientSource?: string;
     clientSourceId?: string | null;
+    force?: boolean;
   }): Promise<{ success: boolean; error?: string; duplicates?: Order[]; orderId?: string }> => {
     try {
       const order = await api.orders.create(orderData);
       await refreshOrders();
       return { success: true, orderId: order.id };
     } catch (error: any) {
-      if (error.message?.includes('duplicate')) {
-        return { success: false, error: 'Duplicate order', duplicates: [] };
+      if (error.status === 409 || error.message?.includes('duplicate')) {
+        return { success: false, error: 'Duplicate order', duplicates: error.data?.duplicates || [] };
       }
       return { success: false, error: error.message };
     }

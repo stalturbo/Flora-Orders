@@ -56,6 +56,29 @@ export default function CreateOrderScreen() {
 
   interface PendingPhoto { uri: string; base64: string; mimeType: string; }
 
+  const compressImageWeb = (uri: string): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = document.createElement('img');
+      img.onload = () => {
+        const MAX = 1600;
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > MAX || h > MAX) {
+          const r = Math.min(MAX / w, MAX / h);
+          w = Math.floor(w * r);
+          h = Math.floor(h * r);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl.split(',')[1]);
+      };
+      img.onerror = () => reject(new Error('Image load failed'));
+      img.src = uri;
+    });
+
   const handlePickPhoto = async () => {
     if (Platform.OS !== 'web') {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -67,8 +90,8 @@ export default function CreateOrderScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 0.7,
+      allowsEditing: false,
+      quality: 0.8,
       base64: Platform.OS !== 'web' ? true : undefined,
     });
 
@@ -77,29 +100,21 @@ export default function CreateOrderScreen() {
       const asset = result.assets[0];
       try {
         let base64Data: string;
+        const mimeType = 'image/jpeg';
         if (Platform.OS === 'web') {
-          const response = await fetch(asset.uri);
-          const blob = await response.blob();
-          base64Data = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const dataUrl = reader.result as string;
-              resolve(dataUrl.split(',')[1]);
-            };
-            reader.onerror = () => reject(new Error('Failed to read file'));
-            reader.readAsDataURL(blob);
-          });
+          base64Data = await compressImageWeb(asset.uri);
         } else {
-          if (asset.base64) {
-            base64Data = asset.base64;
-          } else {
-            const FileSystem = require('expo-file-system');
-            base64Data = await FileSystem.readAsStringAsync(asset.uri, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-          }
+          const ImageManipulator = require('expo-image-manipulator');
+          const compressed = await ImageManipulator.manipulateAsync(
+            asset.uri,
+            [{ resize: { width: 1600 } }],
+            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+          );
+          const FileSystem = require('expo-file-system');
+          base64Data = await FileSystem.readAsStringAsync(compressed.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
         }
-        const mimeType = asset.mimeType || 'image/jpeg';
         setPendingPhotos(prev => [...prev, { uri: asset.uri, base64: base64Data, mimeType }]);
       } catch (error) {
         console.error('Photo pick error:', error);
@@ -214,29 +229,65 @@ export default function CreateOrderScreen() {
 
     if (!result.success && result.duplicates) {
       setIsSubmitting(false);
-      const dupsText = result.duplicates.map(d => `${d.clientName}\n${d.address}`).join('\n\n');
-      if (Platform.OS === 'web') {
-        const createAnyway = window.confirm(`Возможный дубль\n\nНайдены похожие заказы:\n\n${dupsText}\n\nНажмите OK чтобы создать заказ все равно, или Отмена чтобы вернуться.`);
-        if (createAnyway) {
+      const dupsText = result.duplicates.length > 0
+        ? result.duplicates.map(d => `#${(d as any).orderNumber} ${d.clientName}`).join(', ')
+        : 'Похожие заказы найдены';
+
+      const doForceCreate = async () => {
+        setIsSubmitting(true);
+        const forceResult = await createOrder({
+          clientName: clientName.trim(),
+          clientPhone: clientPhone.trim(),
+          address: address.trim(),
+          deliveryDateTime,
+          deliveryDateTimeEnd,
+          amount: Number(amount),
+          floristId: useExternalFlorist ? null : floristId,
+          courierId: useExternalCourier ? null : courierId,
+          externalFloristName: useExternalFlorist ? externalFloristName.trim() || null : null,
+          externalFloristPhone: useExternalFlorist ? externalFloristPhone.trim() || null : null,
+          externalCourierName: useExternalCourier ? externalCourierName.trim() || null : null,
+          externalCourierPhone: useExternalCourier ? externalCourierPhone.trim() || null : null,
+          comment: (isUrgent ? 'СРОЧНО! ' : '') + (comment.trim() || '') || null,
+          paymentStatus,
+          paymentMethod: paymentMethod.trim() || null,
+          paymentDetails: paymentDetails.trim() || null,
+          clientSource,
+          clientSourceId: clientSourceId.trim() || null,
+          force: true,
+        });
+        if (forceResult.success && forceResult.orderId && pendingPhotos.length > 0) {
+          for (const photo of pendingPhotos) {
+            try { await addAttachment(forceResult.orderId, photo.base64, photo.mimeType); } catch {}
+          }
+        }
+        setIsSubmitting(false);
+        if (forceResult.success) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           router.back();
+        } else {
+          Alert.alert('Ошибка', forceResult.error || 'Не удалось создать заказ. Попробуйте ещё раз.');
+        }
+      };
+
+      if (Platform.OS === 'web') {
+        const createAnyway = window.confirm(`Возможный дубль\n\n${dupsText}\n\nСоздать заказ все равно?`);
+        if (createAnyway) {
+          await doForceCreate();
         }
       } else {
         Alert.alert(
           'Возможный дубль',
-          `Найдены похожие заказы:\n\n${dupsText}`,
+          `Найдены похожие заказы: ${dupsText}`,
           [
             { text: 'Отмена', style: 'cancel' },
-            {
+            ...(result.duplicates.length > 0 ? [{
               text: 'Открыть',
               onPress: () => router.push(`/order/${result.duplicates![0].id}`),
-            },
+            }] : []),
             {
               text: 'Создать все равно',
-              onPress: async () => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                router.back();
-              },
+              onPress: doForceCreate,
             },
           ]
         );

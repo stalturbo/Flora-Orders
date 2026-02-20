@@ -15,7 +15,8 @@ import { Ionicons } from "@expo/vector-icons";
 
 SplashScreen.preventAutoHideAsync();
 
-function BackButton({ tintColor }: { tintColor: string }) {
+function BackButton() {
+  const { colors } = useTheme();
   const handleBack = useCallback(() => {
     if (router.canGoBack()) {
       router.back();
@@ -26,7 +27,7 @@ function BackButton({ tintColor }: { tintColor: string }) {
 
   return (
     <Pressable onPress={handleBack} style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8, paddingRight: 8, paddingVertical: 8 }}>
-      <Ionicons name="chevron-back" size={24} color={tintColor} />
+      <Ionicons name="chevron-back" size={24} color={colors.primary} />
     </Pressable>
   );
 }
@@ -35,11 +36,11 @@ function ThemedStack() {
   const { colors } = useTheme();
   
   return (
-    <Stack 
-      screenOptions={{ 
+    <Stack
+      screenOptions={{
         headerBackTitle: "Назад",
-        headerBackVisible: true,
-        headerLeft: () => <BackButton tintColor={colors.primary} />,
+        headerBackVisible: false,
+        headerLeft: () => <BackButton />,
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.primary,
         headerTitleStyle: { fontFamily: 'Inter_600SemiBold', color: colors.text },

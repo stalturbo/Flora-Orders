@@ -63,8 +63,11 @@ async function request<T>(
   });
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || 'Request failed');
+    const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+    const err = new Error(errorData.error || 'Request failed') as any;
+    err.status = response.status;
+    err.data = errorData;
+    throw err;
   }
   
   return response.json();
@@ -118,8 +121,9 @@ export const api = {
       clientPhone: string;
       address: string;
       deliveryDateTime: number;
+      deliveryDateTimeEnd?: number | null;
       amount: number;
-      comment?: string;
+      comment?: string | null;
       floristId?: string | null;
       courierId?: string | null;
       externalFloristName?: string | null;
@@ -131,6 +135,7 @@ export const api = {
       paymentDetails?: string | null;
       clientSource?: string;
       clientSourceId?: string | null;
+      force?: boolean;
     }) =>
       request<any>('/api/orders', {
         method: 'POST',
