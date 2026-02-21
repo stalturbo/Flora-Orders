@@ -56,11 +56,19 @@ export default function CreateOrderScreen() {
 
   interface PendingPhoto { uri: string; base64: string; mimeType: string; }
 
-  const compressImageWeb = (uri: string): Promise<string> =>
-    new Promise((resolve, reject) => {
+  const compressImageWeb = async (uri: string): Promise<string> => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    return new Promise<string>((resolve, reject) => {
       const img = document.createElement('img');
       img.onload = () => {
-        const MAX = 1600;
+        const MAX = 1200;
         let w = img.naturalWidth;
         let h = img.naturalHeight;
         if (w > MAX || h > MAX) {
@@ -72,12 +80,13 @@ export default function CreateOrderScreen() {
         canvas.width = w;
         canvas.height = h;
         canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        resolve(dataUrl.split(',')[1]);
+        const compressed = canvas.toDataURL('image/jpeg', 0.6);
+        resolve(compressed.split(',')[1]);
       };
-      img.onerror = () => reject(new Error('Image load failed'));
-      img.src = uri;
+      img.onerror = () => reject(new Error('Image compression failed'));
+      img.src = dataUrl;
     });
+  };
 
   const handlePickPhoto = async () => {
     if (Platform.OS !== 'web') {
@@ -91,7 +100,7 @@ export default function CreateOrderScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: false,
-      quality: 0.8,
+      quality: 0.7,
       base64: Platform.OS !== 'web' ? true : undefined,
     });
 
@@ -104,16 +113,14 @@ export default function CreateOrderScreen() {
         if (Platform.OS === 'web') {
           base64Data = await compressImageWeb(asset.uri);
         } else {
-          const ImageManipulator = require('expo-image-manipulator');
-          const compressed = await ImageManipulator.manipulateAsync(
-            asset.uri,
-            [{ resize: { width: 1600 } }],
-            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-          );
-          const FileSystem = require('expo-file-system');
-          base64Data = await FileSystem.readAsStringAsync(compressed.uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
+          if (asset.base64) {
+            base64Data = asset.base64;
+          } else {
+            const FileSystem = require('expo-file-system');
+            base64Data = await FileSystem.readAsStringAsync(asset.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+          }
         }
         setPendingPhotos(prev => [...prev, { uri: asset.uri, base64: base64Data, mimeType }]);
       } catch (error) {

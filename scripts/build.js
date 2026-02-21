@@ -130,10 +130,19 @@ function buildPlatform(platform) {
   console.log(`  Copied ${platform} bundle files to static-build/`);
 }
 
+function buildWeb() {
+  const distDir = path.resolve(ROOT_DIR, "dist");
+  console.log("\nBuilding web...");
+  run(`npx expo export --platform web --output-dir ${distDir}`);
+  console.log("  Web build complete in dist/");
+}
+
 async function main() {
   console.log("Building Expo static bundles...\n");
 
   ensureDir(STATIC_BUILD_DIR);
+
+  buildWeb();
 
   for (const platform of ["android", "ios"]) {
     buildPlatform(platform);

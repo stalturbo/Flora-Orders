@@ -40,8 +40,9 @@ interface DataContextValue {
     clientPhone: string;
     address: string;
     deliveryDateTime: number;
+    deliveryDateTimeEnd?: number | null;
     amount: number;
-    comment?: string;
+    comment?: string | null;
     floristId?: string | null;
     courierId?: string | null;
     externalFloristName?: string | null;
@@ -53,6 +54,7 @@ interface DataContextValue {
     paymentDetails?: string | null;
     clientSource?: string;
     clientSourceId?: string | null;
+    force?: boolean;
   }) => Promise<{ success: boolean; error?: string; duplicates?: Order[]; orderId?: string }>;
   updateOrder: (id: string, data: Partial<Order>) => Promise<void>;
   deleteOrder: (orderId: string) => Promise<void>;

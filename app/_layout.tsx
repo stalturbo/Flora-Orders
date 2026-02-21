@@ -39,7 +39,7 @@ function ThemedStack() {
     <Stack
       screenOptions={{
         headerBackTitle: "Назад",
-        headerBackVisible: false,
+        headerBackVisible: true,
         headerLeft: () => <BackButton />,
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.primary,

@@ -262,7 +262,7 @@ export default function OrderDetailScreen() {
   const [uploading, setUploading] = useState(false);
 
   const compressImage = async (uri: string, originalWidth?: number, originalHeight?: number): Promise<string> => {
-    const MAX_DIMENSION = 2048;
+    const MAX_DIMENSION = 1200;
     const actions: ImageManipulator.Action[] = [];
 
     if (originalWidth && originalHeight && (originalWidth > MAX_DIMENSION || originalHeight > MAX_DIMENSION)) {
@@ -273,10 +273,42 @@ export default function OrderDetailScreen() {
     const result = await ImageManipulator.manipulateAsync(
       uri,
       actions,
-      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG, base64: true }
     );
 
     return result.base64!;
+  };
+
+  const compressImageWeb = async (uri: string): Promise<string> => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    return new Promise<string>((resolve, reject) => {
+      const img = document.createElement('img');
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > MAX || h > MAX) {
+          const r = Math.min(MAX / w, MAX / h);
+          w = Math.floor(w * r);
+          h = Math.floor(h * r);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        const compressed = canvas.toDataURL('image/jpeg', 0.6);
+        resolve(compressed.split(',')[1]);
+      };
+      img.onerror = () => reject(new Error('Image compression failed'));
+      img.src = dataUrl;
+    });
   };
 
   const pickAndUploadPhoto = async (
@@ -291,17 +323,7 @@ export default function OrderDetailScreen() {
         let base64Data: string;
 
         if (Platform.OS === 'web') {
-          const response = await fetch(asset.uri);
-          const blob = await response.blob();
-          base64Data = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const dataUrl = reader.result as string;
-              resolve(dataUrl.split(',')[1]);
-            };
-            reader.onerror = () => reject(new Error('Failed to read file'));
-            reader.readAsDataURL(blob);
-          });
+          base64Data = await compressImageWeb(asset.uri);
         } else {
           base64Data = await compressImage(asset.uri, asset.width, asset.height);
         }
